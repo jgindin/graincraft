@@ -1,0 +1,36 @@
+# Build output
+build/
+.gradle/
+.gradletasknamecache
+.kotlin/
+/out/
+*.hprof
+
+# Editor and IDE files
+*.iml
+/.idea/
+*.swp
+*~
+.DS_Store
+
+# Local-only files
+local.properties
+.superpowers/
+*.orig
+/.scratch/
+
+# Packaged apps (built, never committed)
+*.deb
+*.rpm
+*.msi
+*.dmg
+*.apk
+*.aab
+
+# Signing material and credentials: never committed
+keystore.properties
+*.keystore
+*.jks
+*.p12
+*.pfx
+dropbox-app.properties
