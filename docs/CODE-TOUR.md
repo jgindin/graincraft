@@ -61,3 +61,11 @@ In [core/.../design/](../core/src/commonMain/kotlin/com/jaygindin/graincraft/cor
   so a file from a newer app is reported as such even if its shape has changed. `WorkspaceJson`
   holds the JSON settings every file shares.
 - `ShopProfile.kt` has the tools, allowances and stock thicknesses the build math reads.
+
+## 5. Fitting to the target size
+
+In [core/.../fabrication/](../core/src/commonMain/kotlin/com/jaygindin/graincraft/core/fabrication/).
+
+- `PatternFit.kt` turns a pattern and a target size into finished column widths, rows and the
+  actual size reached. Widths are finished widths; trim allowances are added later.
+- `CompileError.kt` lists the reasons a design cannot be compiled, shared by the later build steps.
