@@ -26,11 +26,13 @@ enum class RowKind {
 /** One row along the length. */
 data class FitRow(val kind: RowKind, val height: Length)
 
+/** `rotateAlternateRows` is set for a checkerboard, whose odd rows are turned 180° about Z. */
 data class Fit(
   val columns: List<FitStrip>,
   val rows: List<FitRow>,
   val actual: Dimensions,
   val notes: List<String>,
+  val rotateAlternateRows: Boolean = false,
 )
 
 sealed interface FitResult {
@@ -126,7 +128,7 @@ private fun fitCheckerboard(
       "Length is ${formatter.format(actualLength)} (target ${formatter.format(target.length)}), " +
         "${formatter.format(diff)} $direction target, to keep squares square"
   }
-  return Fit(columns, rows, target.copy(length = actualLength), notes)
+  return Fit(columns, rows, target.copy(length = actualLength), notes, rotateAlternateRows = true)
 }
 
 private fun fitBrick(target: Dimensions, pattern: PatternSpec.Brick): Fit {

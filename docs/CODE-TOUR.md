@@ -74,3 +74,9 @@ In [core/.../fabrication/](../core/src/commonMain/kotlin/com/jaygindin/graincraf
   a sub-panel may reach (end-grain panels are also capped by the crosscut).
 - `PanelSplitter.kt` splits strips into contiguous sub-panels under that limit, splits mortar
   panels into equal parts, and names sub-panels `1A`, `1B`, ...
+- `Fabrication.kt` holds the build: panels (`Panel`, `PanelStrip`), the rows of the final glue-up
+  (`Row`), slice thickness and counts, and the glue-up size and final flatten.
+- `FabricationCompiler.kt` builds it from a `Fit`. It adds the side-trim allowance to the outer
+  strips (or lays out the centred brick sequence), mills strips to the row height plus the panel
+  tool's allowance, splits panels too wide for their tool, and lays out rows. A rotated or shifted
+  row applies to every sub-panel slice in it, so a rotated row lists its sub-panels in reverse.
