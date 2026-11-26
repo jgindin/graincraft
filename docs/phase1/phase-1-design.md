@@ -91,8 +91,8 @@ graincraft/
   `AppGraph` (constructor injection, no DI framework).
 - Package root: `com.jaygindin.graincraft`. Desktop package name `GrainCraft Studio`.
 - Tooling as in straphanger: ktfmt (Google style, 100 columns), detekt (build on the default
-  config), Kover. `scripts/ci.sh` runs
-  `./gradlew ktfmtCheck detekt :core:allTests :app:desktopTest koverVerify :app:packageDeb`.
+  config), Kover, Roborazzi. `scripts/ci.sh` runs `./gradlew ktfmtCheck detekt :core:allTests
+  :app:desktopTest verifyRoborazziDesktop koverVerify :app:packageDeb`.
 - Packaging: `createDistributable` for local runs and `packageDeb` (the owner runs Ubuntu).
 
 ## Core domain (`core`)
@@ -600,6 +600,22 @@ offers "Open in browser", from which the user prints or saves as PDF.
   - Shop: a profile change changes the cut list.
   - A store test against a temporary directory: atomic write, autosave debounce, unparseable file
     handling.
+- **Screenshot tests (Roborazzi, Compose Desktop):** golden images committed under
+  `app/screenshots/`, verified by `verifyRoborazziDesktop` in CI and re-recorded with
+  `recordRoborazziDesktop` only when a visual change is intended (say so in the PR, as in zmanim).
+  Goldens, each in light and dark theme at the default window size:
+  - The library with a few designs, and empty.
+  - The editor for each pattern and grain combination (edge-grain stripes, end-grain stripes,
+    checkerboard, brick), in Raw and in Oiled, which also pins the grain textures: end-grain rings
+    versus long-grain lines, same-strip cells and flipped slices.
+  - The editor with the right pane collapsed (below 1200 dp).
+  - The Issues, Build and Lumber tabs for one design.
+  - Woods (with a row expanded), the custom wood dialog, Shop and Settings.
+  - Each stage diagram, drawn on its own.
+- So that goldens match on any Linux machine and on CI, the theme uses a font bundled in
+  `composeResources/font` (an open-licence sans such as Inter or Noto Sans, the builder's pick)
+  rather than whatever system font is installed, and the screenshot tests set a small pixel-change
+  threshold for anti-aliasing differences.
 - Kover gate: 85% line coverage on `core` (my call); `app` is reported but not gated.
 
 ## Done for phase 1

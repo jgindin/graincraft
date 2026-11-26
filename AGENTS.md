@@ -36,6 +36,7 @@ Always use the Gradle wrapper from the repository root (`./gradlew`). Versions l
 ```bash
 ./gradlew :core:allTests           # the domain tests, on the JVM and on Wasm (Node)
 ./gradlew :app:desktopTest         # Compose Desktop UI tests
+./gradlew verifyRoborazziDesktop   # compare the screenshot tests with their goldens
 ./gradlew :app:run                 # run the desktop app
 ./gradlew :app:packageDeb          # build the .deb
 ```
@@ -68,6 +69,10 @@ Always use the Gradle wrapper from the repository root (`./gradlew`). Versions l
 - Build math is the part where a mistake wastes real lumber. Every formula in the phase 1 design has
   hand-checked worked examples as tests.
 - Fixtures are synthetic. Never commit real user data or credentials.
+- **Screenshot tests: Roborazzi** on Compose Desktop, with goldens in `app/screenshots/`.
+  `verifyRoborazziDesktop` runs in CI; run `recordRoborazziDesktop` only when a visual change is
+  intended, and say so in the PR. Dependency bumps (Compose, Skiko, Roborazzi) must pass
+  `verifyRoborazziDesktop` with no golden changes.
 
 ## Version control and hosting
 
@@ -103,7 +108,7 @@ Always use the Gradle wrapper from the repository root (`./gradlew`). Versions l
 
 | Job | Runs | Required? |
 |---|---|---|
-| `verify` | `ktfmtCheck detekt`, then `:core:allTests :app:desktopTest koverVerify :app:packageDeb` | **Yes** (branch protection) |
+| `verify` | `ktfmtCheck detekt`, then `:core:allTests :app:desktopTest verifyRoborazziDesktop koverVerify :app:packageDeb` | **Yes** (branch protection) |
 
 Its Gradle steps are skipped while the repository has no `gradlew`, so the required check still
 reports.
