@@ -14,10 +14,11 @@ step-by-step build guide based on the user's shop tools.
 - Kotlin Multiplatform + Compose Multiplatform. Package root `com.jaygindin.graincraft`.
 - The first app is a **native Linux desktop app**. Windows, Android and web come later from the same
   code; see [docs/roadmap.md](docs/roadmap.md).
-- **Current state:** planning. The repository has no Gradle build yet. Phase 1's first task creates
-  it; update this file as the build, modules and commands land.
+- **Current state:** the Gradle build, tooling and CI exist; `:core` holds only a smoke-test marker
+  and `:app` opens an empty "GrainCraft Studio" window. The phase 1 plan adds the domain and the
+  screens task by task; update this file as they land.
 
-## Planned modules (phase 1)
+## Modules (phase 1)
 
 | Module | What | Targets |
 |---|---|---|
@@ -28,7 +29,7 @@ step-by-step build guide based on the user's shop tools.
   target in phase 1, so a detekt `ForbiddenImport` rule bans `java.*` and `javax.*` in every
   `commonMain`. Platform services are interfaces in `commonMain`, implemented in `desktopMain`.
 
-## Build, test and run (once the build exists)
+## Build, test and run
 
 Always use the Gradle wrapper from the repository root (`./gradlew`). Versions live in
 `gradle/libs.versions.toml`; do not hardcode them in build scripts. The build uses Java 21.
@@ -39,6 +40,8 @@ Always use the Gradle wrapper from the repository root (`./gradlew`). Versions l
 ./gradlew verifyRoborazziDesktop   # compare the screenshot tests with their goldens
 ./gradlew :app:run                 # run the desktop app
 ./gradlew :app:packageDeb          # build the .deb
+./scripts/ci.sh                    # everything CI runs, in order
+./scripts/run-desktop.sh           # same as ./gradlew :app:run
 ```
 
 ## Code quality gates (CI enforces all of these)
@@ -110,8 +113,8 @@ Always use the Gradle wrapper from the repository root (`./gradlew`). Versions l
 |---|---|---|
 | `verify` | `ktfmtCheck detekt`, then `:core:allTests :app:desktopTest verifyRoborazziDesktop koverVerify :app:packageDeb` | **Yes** (branch protection) |
 
-Its Gradle steps are skipped while the repository has no `gradlew`, so the required check still
-reports.
+It runs `./scripts/ci.sh`, the single definition of the checks. The Roborazzi tasks for the
+`desktop` target are `recordRoborazziDesktop` and `verifyRoborazziDesktop`.
 
 ## Planning documents
 
