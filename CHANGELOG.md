@@ -2,6 +2,18 @@
 
 Newest first. The version matches `version.properties`.
 
+## 0.13 (not yet released)
+
+- The build guide and the design compiler. A design compiles in one pure step into its fitted
+  size, panels, layout, cut list, lumber, warnings and a numbered guide of the stages it needs:
+  buying and milling, preparing (an acetone wipe for oily woods, prompt squeeze-out wiping for
+  woods that bleed), gluing and flattening the panels, crosscutting, arranging and gluing the
+  slices, flattening (always warning that end grain never goes through a planer), trimming, edge
+  details in a safe order, and finishing, with feet last. Glue-up, crosscut and arrangement
+  diagrams are drawn as plain SVG. A design that cannot be built lists every unknown wood, or the
+  first other problem, as a plain sentence. A design's own custom woods are used even when they
+  are missing from the woods list.
+
 ## 0.12 (not yet released)
 
 - Woodworking warnings: species rated Caution or Not suitable for the board's grain, a Janka

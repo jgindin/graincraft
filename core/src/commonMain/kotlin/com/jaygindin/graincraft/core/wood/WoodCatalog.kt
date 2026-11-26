@@ -398,10 +398,17 @@ object WoodCatalog {
  * Built-ins plus the user's custom species; a custom id that clashes with a built-in is dropped.
  */
 class Woods(customs: List<WoodSpecies>) {
-  val all: List<WoodSpecies> =
-    WoodCatalog.builtIns + customs.filter { WoodCatalog.byId(it.id) == null }.distinctBy { it.id }
+  /** The custom species kept: one per id, none clashing with a built-in. */
+  val customs: List<WoodSpecies> =
+    customs.filter { WoodCatalog.byId(it.id) == null }.distinctBy { it.id }
+
+  val all: List<WoodSpecies> = WoodCatalog.builtIns + this.customs
 
   private val index = all.associateBy { it.id }
 
   fun byId(id: String): WoodSpecies? = index[id]
+
+  /** These woods plus those of `extra` whose ids are not already known; known ids keep theirs. */
+  fun withExtra(extra: List<WoodSpecies>): Woods =
+    if (extra.all { byId(it.id) != null }) this else Woods(customs + extra)
 }
