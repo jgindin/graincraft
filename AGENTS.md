@@ -117,5 +117,6 @@ reports.
 
 - `docs/roadmap.md`: the phases (1 core and Linux desktop, 2 more patterns, 3 3D viewer, 4 photo
   import, 5 Android, 6 Dropbox sync, 7 web, 8 prompts, 9 Windows).
-- `docs/phase1/phase-1-design.md`: the phase 1 design. Each phase gets its own design and
+- `docs/phase1/phase-1-design.md` and `phase-1-implementation.md`: the phase 1 design and its
+  task-by-task plan, with a status note on each task once it is done. Each phase gets its own design and
   implementation plan under `docs/phaseN/`; keep status notes current when you finish work.
