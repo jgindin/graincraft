@@ -28,10 +28,10 @@ jobs:
         if: hashFiles('gradlew') != ''
         run: ./gradlew ktfmtCheck detekt
       # The core's tests run on the JVM and on Wasm (Node), which keeps Java-only APIs out of shared
-      #  code; the app's tests are Compose Desktop UI tests.
-      - name: Run tests, check coverage and build the Linux package
+      #  code; the app's tests are Compose Desktop UI tests and Roborazzi screenshot tests.
+      - name: Run tests, verify screenshots, check coverage and build the Linux package
         if: hashFiles('gradlew') != ''
-        run: ./gradlew :core:allTests :app:desktopTest koverVerify :app:packageDeb
+        run: ./gradlew :core:allTests :app:desktopTest verifyRoborazziDesktop koverVerify :app:packageDeb
       - name: Upload test reports on failure
         if: failure()
         uses: actions/upload-artifact@v7
@@ -40,3 +40,4 @@ jobs:
           path: |
             **/build/reports/tests/**
             **/build/reports/kover/**
+            **/build/outputs/roborazzi/**
