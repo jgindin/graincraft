@@ -2,6 +2,13 @@
 
 Newest first. The version matches `version.properties`.
 
+## 0.10 (not yet released)
+
+- Laying out the finished board: every piece on its face as a rectangle in board coordinates, with
+  its species, fibre direction, the panel-1 strip it came from, its slice row, and whether that row
+  is rotated or shifted. Rows are centred on the board and trimmed to the finished size; wide
+  edge-grain strips show as two laminated pieces.
+
 ## 0.9 (not yet released)
 
 - Turning a fitted pattern into a build: the long-grain panels (edge-grain board, end-grain panel 1
