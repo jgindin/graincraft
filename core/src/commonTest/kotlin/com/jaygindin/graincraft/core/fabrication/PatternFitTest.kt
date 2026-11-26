@@ -45,6 +45,7 @@ class PatternFitTest {
       )
     assertEquals(listOf(inch(4), inch(2), inch(4)), f.columns.map { it.finishedWidth })
     assertEquals(listOf("s0", "s1", "s2"), f.columns.map { it.speciesId })
+    assertTrue(!f.rotateAlternateRows)
   }
 
   @Test
@@ -113,6 +114,7 @@ class PatternFitTest {
     assertTrue(f.rows.all { it.height == inch(1, 1, 2) })
     assertEquals(dims(inch(18), inch(12)), f.actual)
     assertTrue(f.notes.isEmpty())
+    assertTrue(f.rotateAlternateRows)
   }
 
   @Test

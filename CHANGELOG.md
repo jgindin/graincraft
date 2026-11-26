@@ -2,6 +2,13 @@
 
 Newest first. The version matches `version.properties`.
 
+## 0.9 (not yet released)
+
+- Turning a fitted pattern into a build: the long-grain panels (edge-grain board, end-grain panel 1
+  and the brick mortar panel) with milled strip widths, heights and lengths, split into sub-panels
+  where a tool is too narrow; slice thickness and counts; and the rows of the final glue-up, with
+  checkerboard rows rotated and brick rows shifted as whole rows.
+
 ## 0.8 (not yet released)
 
 - Choosing the long-grain flattening tool (planer, drum sander, or the end-grain method) and
