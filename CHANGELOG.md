@@ -2,6 +2,13 @@
 
 Newest first. The version matches `version.properties`.
 
+## 0.8 (not yet released)
+
+- Choosing the long-grain flattening tool (planer, drum sander, or the end-grain method) and
+  splitting panels that are too wide into sub-panels at strip boundaries: fewest sub-panels, then
+  the smallest widest, then the widest narrowest, then the leftmost boundaries. Mortar panels split
+  into equal parts.
+
 ## 0.7 (not yet released)
 
 - Fitting patterns to the target size: stripe widths scale to the board width with the rounding
