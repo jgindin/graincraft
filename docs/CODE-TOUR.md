@@ -35,3 +35,14 @@ All in [core/.../units/](../core/src/commonMain/kotlin/com/jaygindin/graincraft/
   millimetres with one decimal.
 - `Nominal.kt` has the nominal thickness grades (4/4 to 8/4) and `boardFeet`, which prices on the
   nominal thickness.
+
+## 3. The wood catalog
+
+All in [core/.../wood/](../core/src/commonMain/kotlin/com/jaygindin/graincraft/core/wood/).
+
+- `WoodSpecies.kt` has the species type and its parts: `Rgb` (with WCAG luminance), `WoodTones`,
+  `PoreType`, and `Rating`, which is ordered best to worst so the worst of several is the maximum.
+- `WoodCatalog.kt` holds the 26 built-in species, copied from the design table, and `Woods`, which
+  merges them with the user's custom species (a custom id never replaces a built-in).
+- `CustomWoodRating.kt` rates a custom species by rule (soft, open pores, irritant, oily) and
+  derives latewood and pore tones by darkening a base colour.
