@@ -43,7 +43,8 @@ All in [core/.../wood/](../core/src/commonMain/kotlin/com/jaygindin/graincraft/c
 - `WoodSpecies.kt` has the species type and its parts: `Rgb` (with WCAG luminance), `WoodTones`,
   `PoreType`, and `Rating`, which is ordered best to worst so the worst of several is the maximum.
 - `WoodCatalog.kt` holds the 26 built-in species, copied from the design table, and `Woods`, which
-  merges them with the user's custom species (a custom id never replaces a built-in).
+  merges them with the user's custom species (a custom id never replaces a built-in);
+  `withExtra` adds a design's embedded customs whose ids are not known yet.
 - `CustomWoodRating.kt` rates a custom species by rule (soft, open pores, irritant, oily) and
   derives latewood and pore tones by darkening a base colour.
 
@@ -106,3 +107,27 @@ In [core/.../audit/](../core/src/commonMain/kotlin/com/jaygindin/graincraft/core
   sorted AVOID, WARNING, INFO. It reads the species from the fit's columns and checks species
   suitability for the grain mode, Janka spread, colour bleed, thin strips and mortar lines,
   end-grain thickness and oily woods. Unknown species ids are skipped.
+
+## 8. Build guide and compiler
+
+In [core/.../guide/](../core/src/commonMain/kotlin/com/jaygindin/graincraft/core/guide/) and
+[core/.../compile/](../core/src/commonMain/kotlin/com/jaygindin/graincraft/core/compile/).
+
+- `Diagram.kt` holds the guide's model: `Stage` (number, kind, title, steps, callouts, diagram),
+  `Callout` (a safety `WARNING` or a `TIP`), and `Diagram`, plain shapes in inches.
+- `StagePlanner.kt` has `planStages`, which writes the stages a board needs and numbers them:
+  edge grain skips slicing and the final flatten, and edge details appear only when chosen.
+  `GuideContext` carries the inputs and the shared wording (species names, panel names, tools);
+  it also writes the buying, preparing, gluing and panel-flattening stages.
+- `BoardStages.kt` writes the rest: crosscut, arrange and glue, the final flatten (always with
+  the never-a-planer warning), trim, edge details (groove, corner radius, profile, grips) and
+  finish (feet last).
+- `StageDiagrams.kt` draws the glue-up cross-sections, the crosscut side view with one dashed line
+  per slice, and the arrangement from above (laid out with `buildLayout` at the glue-up size, so
+  shifted rows show ragged and rotated rows are hatched).
+- `StageDiagramSvgBuilder.kt` turns a `Diagram` into a self-contained SVG string. Numbers are
+  written by hand so the JVM and Wasm give identical text.
+- `DesignCompiler.kt` runs the whole pipeline: it adds the design's embedded custom woods, checks
+  every species id, fits, builds the fabrication, cut list, lumber, layout (at the fitted size),
+  warnings and stages, or returns `CompileResult.Failed`. `CompileError.message` gives each error
+  as one sentence in the user's units.
