@@ -2,6 +2,13 @@
 
 Newest first. The version matches `version.properties`.
 
+## 0.7 (not yet released)
+
+- Fitting patterns to the target size: stripe widths scale to the board width with the rounding
+  remainder on the widest strip, checkerboards keep square cells on an even column count and report
+  the actual length, bricks fill the length exactly. Size and grain-mode checks return a
+  `CompileError`.
+
 ## 0.6 (not yet released)
 
 - Board designs and the shop tool profile: stripes, checkerboard and brick patterns, edge
