@@ -69,3 +69,8 @@ In [core/.../fabrication/](../core/src/commonMain/kotlin/com/jaygindin/graincraf
 - `PatternFit.kt` turns a pattern and a target size into finished column widths, rows and the
   actual size reached. Widths are finished widths; trim allowances are added later.
 - `CompileError.kt` lists the reasons a design cannot be compiled, shared by the later build steps.
+- `Flattening.kt` picks the tool that flattens a long-grain panel (planer, drum sander, or the
+  profile's end-grain method) with its allowance and width limit, and `splitLimit` gives the width
+  a sub-panel may reach (end-grain panels are also capped by the crosscut).
+- `PanelSplitter.kt` splits strips into contiguous sub-panels under that limit, splits mortar
+  panels into equal parts, and names sub-panels `1A`, `1B`, ...
