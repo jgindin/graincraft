@@ -1,0 +1,28 @@
+# Overrides of detekt's default rule set only (buildUponDefaultConfig is on); each one says why.
+# There is no baseline: fix findings rather than suppress them.
+
+style:
+  MagicNumber:
+    # Dp/sp sizes and colours inside composables and the theme read better inline, and test
+    #  fixtures use literal values on purpose. Everything else needs a named constant.
+    ignoreAnnotated: ['Composable']
+    ignoreRanges: true
+    ignoreNumbers: ['-1', '0', '1', '2', '3', '10', '100', '1000']
+    excludes:
+      - '**/commonTest/**'
+      - '**/desktopTest/**'
+      - '**/ui/theme/**'
+  ForbiddenComment:
+    comments:
+      - 'FIXME:'
+      - 'STOPSHIP:'
+  ForbiddenImport:
+    active: true
+    # Shared code also targets Wasm (and later Android); Java APIs belong in desktopMain/jvmMain.
+    forbiddenImports: ['java.*', 'javax.*']
+    excludes: ['**/desktopMain/**', '**/desktopTest/**', '**/jvmMain/**', '**/jvmTest/**']
+
+naming:
+  FunctionNaming:
+    # Composables are PascalCase by convention.
+    ignoreAnnotated: ['Composable']
