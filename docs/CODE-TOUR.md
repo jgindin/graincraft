@@ -46,3 +46,18 @@ All in [core/.../wood/](../core/src/commonMain/kotlin/com/jaygindin/graincraft/c
   merges them with the user's custom species (a custom id never replaces a built-in).
 - `CustomWoodRating.kt` rates a custom species by rule (soft, open pores, irritant, oily) and
   derives latewood and pore tones by darkening a base colour.
+
+## 4. Designs and the shop profile
+
+In [core/.../design/](../core/src/commonMain/kotlin/com/jaygindin/graincraft/core/design/) and
+[core/.../shop/](../core/src/commonMain/kotlin/com/jaygindin/graincraft/core/shop/).
+
+- `BoardDesign.kt` is a saved design: grain mode, finished size, a pattern and edge treatments.
+- `PatternSpec.kt` is the sealed pattern type (`Stripes`, `Checkerboard`, `Brick`), written to JSON
+  with a `"type"` field.
+- `EdgeTreatments.kt` holds the edge details and the end-grain `FlatteningMethod`.
+- `StripePresets.kt` fills a strip list (uniform, alternating, mirror, Fibonacci, pinstripe).
+- `DesignJson.kt` encodes and decodes design files. It reads `schemaVersion` before anything else,
+  so a file from a newer app is reported as such even if its shape has changed. `WorkspaceJson`
+  holds the JSON settings every file shares.
+- `ShopProfile.kt` has the tools, allowances and stock thicknesses the build math reads.

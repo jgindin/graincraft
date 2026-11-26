@@ -2,6 +2,12 @@
 
 Newest first. The version matches `version.properties`.
 
+## 0.6 (not yet released)
+
+- Board designs and the shop tool profile: stripes, checkerboard and brick patterns, edge
+  treatments, stripe presets (uniform, alternating, mirror, Fibonacci, pinstripe), and versioned
+  JSON files that refuse a design from a newer schema.
+
 ## 0.5 (not yet released)
 
 - The wood catalog: 26 built-in species with Janka hardness, raw and oiled tones, pore type, oily,
