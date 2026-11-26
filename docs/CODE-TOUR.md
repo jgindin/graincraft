@@ -80,3 +80,15 @@ In [core/.../fabrication/](../core/src/commonMain/kotlin/com/jaygindin/graincraf
   strips (or lays out the centred brick sequence), mills strips to the row height plus the panel
   tool's allowance, splits panels too wide for their tool, and lays out rows. A rotated or shifted
   row applies to every sub-panel slice in it, so a rotated row lists its sub-panels in reverse.
+
+## 6. Layout of the finished board
+
+In [core/.../layout/](../core/src/commonMain/kotlin/com/jaygindin/graincraft/core/layout/).
+
+- `Layout.kt` holds the finished board's face: `BoardLayout` and its `Piece`s, each a rectangle in
+  board coordinates (`x` along the length, `y` across the width) with species, `Fibre`, the
+  panel-1 strip it came from, its slice row, and the row's rotation and shift.
+- `LayoutBuilder.kt` builds it from a `Fabrication`. Each row's strips are laid across the glue-up
+  width centred on the board (a rotated row's strips reversed, a shifted row moved by its shift),
+  then clipped to `L × W`. An edge-grain strip thicker than the profile's thickest stock is split
+  into two laminated pieces.
