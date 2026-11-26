@@ -7,6 +7,8 @@ style:
     #  fixtures use literal values on purpose. Everything else needs a named constant.
     ignoreAnnotated: ['Composable']
     ignoreRanges: true
+    # An enum entry's argument is named by the entry itself (FOUR_QUARTER(4)).
+    ignoreEnums: true
     ignoreNumbers: ['-1', '0', '1', '2', '3', '10', '100', '1000']
     excludes:
       - '**/commonTest/**'
