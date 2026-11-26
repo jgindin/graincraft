@@ -2,6 +2,14 @@
 
 Newest first. The version matches `version.properties`.
 
+## 0.11 (not yet released)
+
+- The cut list and lumber: every milled part with its species, count, size, the nominal stock it
+  comes from, the thickness it is planed to and the width it is ripped to, with identical parts
+  merged. Wide edge-grain strips are laminated from two boards, thin strips are ripped from thick
+  stock when that takes less lumber, and parts too thick for any stock say so. Board feet per
+  species include kerf and milling waste, shown to 0.1 BF with a total.
+
 ## 0.10 (not yet released)
 
 - Laying out the finished board: every piece on its face as a rectangle in board coordinates, with

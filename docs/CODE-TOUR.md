@@ -80,6 +80,11 @@ In [core/.../fabrication/](../core/src/commonMain/kotlin/com/jaygindin/graincraf
   strips (or lays out the centred brick sequence), mills strips to the row height plus the panel
   tool's allowance, splits panels too wide for their tool, and lays out rows. A rotated or shifted
   row applies to every sub-panel slice in it, so a rotated row lists its sub-panels in reverse.
+- `CutList.kt` turns a `Fabrication` into the parts to mill and the lumber to buy. Each strip of
+  each panel is a part; identical parts merge. Edge-grain strips take their width from stock
+  thickness (laminated from two halves when wider than the thickest stock); other parts take
+  whichever orientation needs fewer board feet. `lumber` sums board feet per species with kerf and
+  milling waste, and `formatBoardFeet` shows them to 0.1 BF.
 
 ## 6. Layout of the finished board
 
