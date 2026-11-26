@@ -97,3 +97,12 @@ In [core/.../layout/](../core/src/commonMain/kotlin/com/jaygindin/graincraft/cor
   width centred on the board (a rotated row's strips reversed, a shifted row moved by its shift),
   then clipped to `L × W`. An edge-grain strip thicker than the profile's thickest stock is split
   into two laminated pieces.
+
+## 7. Woodworking warnings
+
+In [core/.../audit/](../core/src/commonMain/kotlin/com/jaygindin/graincraft/core/audit/).
+
+- `WoodAuditor.kt` holds `audit(mode, finished, fit, woods, formatter)`, which returns `Issue`s
+  sorted AVOID, WARNING, INFO. It reads the species from the fit's columns and checks species
+  suitability for the grain mode, Janka spread, colour bleed, thin strips and mortar lines,
+  end-grain thickness and oily woods. Unknown species ids are skipped.
