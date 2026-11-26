@@ -2,6 +2,13 @@
 
 Newest first. The version matches `version.properties`.
 
+## 0.12 (not yet released)
+
+- Woodworking warnings: species rated Caution or Not suitable for the board's grain, a Janka
+  spread over 1100 lbf, oily woods, a colour-bleeding wood beside a lighter one, strips or mortar
+  lines under 1/8", and end-grain boards thinner than 1-1/4". They are listed worst first and
+  never block anything.
+
 ## 0.11 (not yet released)
 
 - The cut list and lumber: every milled part with its species, count, size, the nominal stock it
