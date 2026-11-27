@@ -22,7 +22,7 @@ graincraft/
 
 - [app/.../Main.kt](../app/src/desktopMain/kotlin/com/jaygindin/graincraft/app/Main.kt) opens the
   window and [App.kt](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/App.kt) is the root
-  composable.
+  composable (section 13).
 
 ## 2. Lengths and units
 
@@ -181,3 +181,28 @@ In [app/.../data/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/dat
   parse, or was made by a newer version, is listed as `Unreadable` and never overwritten; trash
   and restore refuse to replace an existing file. Profile, woods and settings that fail to parse
   load defaults and stay on disk until the next explicit save.
+
+## 13. App shell and Settings
+
+In [app/.../app/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/) and
+[ui/settings/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/settings/).
+
+- `platform/Platform.kt` holds the platform interfaces: `FileDialogs` (open a design file's text,
+  save text to a chosen path), `ExternalBrowser` (open a file or folder with the desktop's apps)
+  and `Clock`. `desktopMain/.../platform/DesktopPlatform.kt` implements them with FileKit and
+  `xdg-open`.
+- `AppGraph` carries the store, dialogs, browser, clock and id source; `Main.kt` builds the real
+  one, tests build one from `testutil/FakePlatform.kt` and `FakeWorkspaceStore.kt`.
+- `App(graph)` creates the `SettingsViewModel`, picks light or dark from the theme setting,
+  provides `LocalUnitFormatter` (in `ui/LocalUnitFormatter.kt`) and shows `AppScaffold`: the
+  `NavigationRail` with the four `Destination`s (`Destination.kt`, with their icons and test-tag
+  names) and the current screen beside it. Each screen brings its own top bar. Designs, Woods and
+  Shop are `PlaceholderScreen`s until their screens land.
+- `SettingsViewModel` loads `AppSettings` once and saves every change in order. `SettingsScreen`
+  shows units, precision (disabled for metric), theme, the data folder with "Open folder", and
+  About. `AppInfo.VERSION` is generated from `version.properties` by the `generateAppInfo` Gradle
+  task.
+- `Main.kt` restores the window's position and size from `AppSettings.window` (ignored when it is
+  on no screen, see `restorablePlacement`) and saves them on close.
+- Screenshot goldens live in [app/screenshots/](../app/screenshots/); `ShellScreenshotTest` renders
+  `AppShell` at 1280 × 800 with a fixed version so goldens do not change with releases.
