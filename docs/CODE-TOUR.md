@@ -150,3 +150,20 @@ In [core/.../packet/](../core/src/commonMain/kotlin/com/jaygindin/graincraft/cor
   page (inline CSS with `@media print`, inline SVG): cover with a flat top-view board drawing in raw
   species colours, issues, shopping list, cut list, each stage with its diagram, and the shop
   settings. `defaultFileName(name)` gives `"<name> - shop packet.html"`. All text is escaped.
+
+## 11. App theme
+
+In [app/.../ui/theme/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/theme/).
+
+- `GrainCraftTheme(dark, content)` applies the light or dark colour scheme (warm walnut and maple
+  tones, every role set), `GrainCraftShapes` (4 / 8 / 12 / 16 / 28 dp), the type scale from
+  `Type.kt` and `LocalRatingColors` (recommended, caution, not suitable, each with an on-colour).
+  `ThemeChoice` is the System / Light / Dark setting. `Spacing` holds the 4 / 8 / 12 / 16 / 24 dp
+  steps; `primaryButtonColors()` and `quietButtonColors()` style the two button weights.
+- Fonts (Noto Sans Regular and Bold, with `OFL.txt`) are in
+  [composeResources/font/](../app/src/commonMain/composeResources/font/); icons are Material Symbols
+  vector drawables in [composeResources/drawable/](../app/src/commonMain/composeResources/drawable/)
+  (`Res.drawable.ic_*`).
+- `ThemeTest` fails on low contrast, small text, a missing bundled font, an icon that does not
+  decode, or a `Color(0x`, named colour or `fontSize =` in any screen file outside `ui/theme/`,
+  `ui/preview/` and `ui/diagram/`.
