@@ -5,7 +5,7 @@ plugins {
 }
 
 kotlin {
-  jvmToolchain(21)
+  jvmToolchain(libs.versions.java.get().toInt())
   jvm()
   wasmJs { nodejs() }
 

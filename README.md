@@ -33,7 +33,7 @@ Your designs and settings live in `~/.local/share/graincraft-studio/` (or
 
 ## Run it
 
-From a clone of this repository, with a JDK installed (Gradle fetches Java 21 itself):
+From a clone of this repository, with a JDK installed (Gradle fetches Java 25 itself):
 
 ```bash
 ./scripts/run-desktop.sh

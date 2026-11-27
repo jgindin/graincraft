@@ -39,7 +39,7 @@ val generateAppInfo =
   }
 
 kotlin {
-  jvmToolchain(21)
+  jvmToolchain(libs.versions.java.get().toInt())
   jvm("desktop")
 
   sourceSets {
@@ -79,11 +79,11 @@ roborazzi { outputDir.set(file("screenshots")) }
 compose.desktop {
   application {
     mainClass = "com.jaygindin.graincraft.app.MainKt"
-    // Run and package with the build's Java 21 toolchain rather than the JDK Gradle runs on, which
+    // Run and package with the build's Java toolchain rather than the JDK Gradle runs on, which
     // can be older than the class files.
     javaHome =
       javaToolchains
-        .launcherFor { languageVersion = JavaLanguageVersion.of(21) }
+        .launcherFor { languageVersion = JavaLanguageVersion.of(libs.versions.java.get()) }
         .get()
         .metadata
         .installationPath
