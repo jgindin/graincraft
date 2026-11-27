@@ -2,6 +2,14 @@
 
 Newest first. The version matches `version.properties`.
 
+## 0.21 (not yet released)
+
+- Editor view model (no screen yet): edits with 100 steps of undo and redo, a compile 150 ms after
+  the last change and whenever the woods, shop profile or units change, and an autosave 1 s after
+  the last change that bumps the revision and embeds a copy of each custom wood the design uses.
+  Switching a checkerboard or brick design to edge grain asks first and then starts from the
+  default stripes. A failed save shows an error and is retried on the next edit or on close.
+
 ## 0.20 (not yet released)
 
 - Woods screen: a searchable list of the 26 built-in and the custom species with raw and oiled
