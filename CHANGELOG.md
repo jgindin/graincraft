@@ -2,6 +2,13 @@
 
 Newest first. The version matches `version.properties`.
 
+## 0.15 (not yet released)
+
+- Shop packet: `ShopPacketExporter` builds one self-contained, print-friendly HTML page with the
+  board drawing in species colours, issues, shopping list, cut list, every build stage with its
+  diagram, and the shop settings used. User text is escaped and every length goes through the
+  unit formatter.
+
 ## 0.14 (not yet released)
 
 - Grain textures: pixel textures for the 2D preview. End grain shows noise-warped growth rings

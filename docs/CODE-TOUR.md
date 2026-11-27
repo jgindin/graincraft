@@ -141,3 +141,12 @@ In [core/.../texture/](../core/src/commonMain/kotlin/com/jaygindin/graincraft/co
   warped rings around a pith 2 to 6 inches off the piece, with pores for open and semi-ring woods;
   long grain draws wavy lines along X. Everything is hand-written hash noise, so JVM and Wasm
   agree. `mirrored` flips x.
+
+## 10. Shop packet
+
+In [core/.../packet/](../core/src/commonMain/kotlin/com/jaygindin/graincraft/core/packet/).
+
+- `ShopPacketExporter.kt`: `html(compiled, woods, profile, formatter)` returns one self-contained
+  page (inline CSS with `@media print`, inline SVG): cover with a flat top-view board drawing in raw
+  species colours, issues, shopping list, cut list, each stage with its diagram, and the shop
+  settings. `defaultFileName(name)` gives `"<name> - shop packet.html"`. All text is escaped.
