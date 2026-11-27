@@ -2,6 +2,14 @@
 
 Newest first. The version matches `version.properties`.
 
+## 0.17 (not yet released)
+
+- Workspace storage: `WorkspaceStore` with a file implementation under
+  `$XDG_DATA_HOME/graincraft-studio/` (default `~/.local/share/graincraft-studio/`). Designs,
+  a 30-day trash, shop profile, custom woods and `AppSettings` are written atomically (temp file,
+  then rename). Unreadable or newer-version design files are listed with a reason and never
+  overwritten, and trash and restore never replace an existing file.
+
 ## 0.16 (not yet released)
 
 - App theme: `GrainCraftTheme(dark)` with warm wood-toned light and dark colour schemes (every

@@ -167,3 +167,17 @@ In [app/.../ui/theme/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app
 - `ThemeTest` fails on low contrast, small text, a missing bundled font, an icon that does not
   decode, or a `Color(0x`, named colour or `fontSize =` in any screen file outside `ui/theme/`,
   `ui/preview/` and `ui/diagram/`.
+
+## 12. Workspace storage
+
+In [app/.../data/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/data/) (interface,
+`AppSettings`) and the same folder under `desktopMain` (`FileWorkspaceStore`, `XdgPaths.kt`).
+
+- `WorkspaceStore` is everything the app keeps on disk: designs, a 30-day trash, shop profile,
+  custom woods and settings. `FileWorkspaceStore` keeps `designs/<id>.graincraft.json`,
+  `trash/<id>.graincraft.json` (trash time is the file's modified time), `shop-profile.json`,
+  `custom-woods.json` and `settings.json` under `xdgDataRoot(...)`.
+- Every write goes to `<name>.tmp` and is renamed over the target. A design file that does not
+  parse, or was made by a newer version, is listed as `Unreadable` and never overwritten; trash
+  and restore refuse to replace an existing file. Profile, woods and settings that fail to parse
+  load defaults and stay on disk until the next explicit save.
