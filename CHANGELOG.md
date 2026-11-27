@@ -2,6 +2,14 @@
 
 Newest first. The version matches `version.properties`.
 
+## 0.16 (not yet released)
+
+- App theme: `GrainCraftTheme(dark)` with warm wood-toned light and dark colour schemes (every
+  role set), shapes, `Spacing`, a type scale in bundled Noto Sans (SIL OFL, licence beside the
+  fonts), and rating colours through `LocalRatingColors`. Twenty-six Material Symbols vector
+  icons. `ThemeTest` checks contrast, minimum text sizes, the bundled font, icon loading, and that
+  screens use no colour or font-size literals.
+
 ## 0.15 (not yet released)
 
 - Shop packet: `ShopPacketExporter` builds one self-contained, print-friendly HTML page with the
