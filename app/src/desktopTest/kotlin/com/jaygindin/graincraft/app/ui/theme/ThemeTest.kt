@@ -22,12 +22,15 @@ import graincraft.app.generated.resources.ic_delete
 import graincraft.app.generated.resources.ic_download
 import graincraft.app.generated.resources.ic_edit
 import graincraft.app.generated.resources.ic_error
+import graincraft.app.generated.resources.ic_expand_less
+import graincraft.app.generated.resources.ic_expand_more
 import graincraft.app.generated.resources.ic_fit_screen
 import graincraft.app.generated.resources.ic_folder_open
 import graincraft.app.generated.resources.ic_forest
 import graincraft.app.generated.resources.ic_grid_view
 import graincraft.app.generated.resources.ic_info
 import graincraft.app.generated.resources.ic_more_vert
+import graincraft.app.generated.resources.ic_palette
 import graincraft.app.generated.resources.ic_print
 import graincraft.app.generated.resources.ic_redo
 import graincraft.app.generated.resources.ic_search
@@ -35,6 +38,7 @@ import graincraft.app.generated.resources.ic_settings
 import graincraft.app.generated.resources.ic_undo
 import graincraft.app.generated.resources.ic_upload_file
 import graincraft.app.generated.resources.ic_warning
+import graincraft.app.generated.resources.ic_water_drop
 import graincraft.app.generated.resources.ic_zoom_in
 import graincraft.app.generated.resources.ic_zoom_out
 import java.io.File
@@ -145,6 +149,10 @@ class ThemeTest {
         Res.drawable.ic_fit_screen,
         Res.drawable.ic_arrow_upward,
         Res.drawable.ic_arrow_downward,
+        Res.drawable.ic_expand_more,
+        Res.drawable.ic_expand_less,
+        Res.drawable.ic_water_drop,
+        Res.drawable.ic_palette,
       )
     setContent { icons.forEach { Image(painterResource(it), contentDescription = null) } }
     waitForIdle()
