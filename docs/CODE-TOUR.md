@@ -246,3 +246,21 @@ In [ui/woods/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/wood
   defaults" asks first.
 - `LengthField` keeps what the user types while editing, shows `parseLength`'s reason as an error,
   and commits on valid input; otherwise it shows the length with `LocalUnitFormatter`.
+
+## 16. Editor view model
+
+In [ui/editor/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/editor/).
+
+- `EditorViewModel` holds the open design and exposes `EditorState`: the design, the latest
+  `CompileResult`, the woods the compiler sees (the user's plus the design's embedded customs),
+  `SaveStatus`, the `Finish` (raw or oiled), undo and redo availability, and whether a grain switch
+  is waiting for confirmation.
+- `edit` is one undo step (history of 100); undo and redo carry the current revision forward so a
+  save never counts back. Compiling runs on `Dispatchers.Default` 150 ms after the last change, at
+  once on open, and again when the shared `woods`, `profile` or formatter flows change.
+- Autosave writes 1 s after the last change, bumping `revision` and `updatedAtMillis` and setting
+  `embeddedCustomWoods` to the custom woods the pattern uses. `flush()` writes a pending change at
+  once; the editor awaits it before closing. A failed write sets `SaveStatus.ERROR` and keeps the
+  change pending for the next edit or flush.
+- The debounces run in an injectable scope and compile dispatcher, so `EditorViewModelTest` drives
+  them with virtual time.
