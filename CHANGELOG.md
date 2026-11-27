@@ -2,6 +2,13 @@
 
 Newest first. The version matches `version.properties`.
 
+## 0.14 (not yet released)
+
+- Grain textures: pixel textures for the 2D preview. End grain shows noise-warped growth rings
+  around a pith outside the piece, with pore dots for ring-porous and semi-ring woods; long grain
+  shows fine wavy lines along the board. Cells cut from one strip share a seed, so their rings
+  match, and a mirrored render flips them left to right. Output is identical on every platform.
+
 ## 0.13 (not yet released)
 
 - The build guide and the design compiler. A design compiles in one pure step into its fitted

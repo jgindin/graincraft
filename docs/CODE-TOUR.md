@@ -131,3 +131,13 @@ In [core/.../guide/](../core/src/commonMain/kotlin/com/jaygindin/graincraft/core
   every species id, fits, builds the fabrication, cut list, lumber, layout (at the fitted size),
   warnings and stages, or returns `CompileResult.Failed`. `CompileError.message` gives each error
   as one sentence in the user's units.
+
+## 9. Grain textures
+
+In [core/.../texture/](../core/src/commonMain/kotlin/com/jaygindin/graincraft/core/texture/).
+
+- `GrainTexture.kt` holds `TextureSpec`, `GrainTexture.render(spec, width, height)` (ARGB,
+  row-major) and `textureSeed(speciesId, sourceStripIndex, laminationIndex)`. End grain draws
+  warped rings around a pith 2 to 6 inches off the piece, with pores for open and semi-ring woods;
+  long grain draws wavy lines along X. Everything is hand-written hash noise, so JVM and Wasm
+  agree. `mirrored` flips x.
