@@ -74,6 +74,9 @@ class EditorViewModel(
   private val undoStack = ArrayDeque<BoardDesign>()
   private val redoStack = ArrayDeque<BoardDesign>()
 
+  // The coalescing key of the last edit, while further edits with it join the same undo step.
+  private var runKey: String? = null
+
   // Bumped on every change to the design's content, so a save's new revision does not recompile.
   private val contentVersion = MutableStateFlow(0)
 
@@ -97,13 +100,21 @@ class EditorViewModel(
     }
   }
 
-  /** Applies [change] to the design as one undo step. */
-  fun edit(change: (BoardDesign) -> BoardDesign) {
+  /**
+   * Applies [change] to the design as one undo step. Edits in a row with the same non-null
+   * [coalesceKey], such as the keystrokes typed into one field, share a single step; any other
+   * edit, an undo or a redo ends the run.
+   */
+  fun edit(coalesceKey: String? = null, change: (BoardDesign) -> BoardDesign) {
     val current = mutable.value.design
     val next = change(current)
     if (next == current) return
-    undoStack.addLast(current)
-    if (undoStack.size > HISTORY_STEPS) undoStack.removeFirst()
+    val continuing = coalesceKey != null && coalesceKey == runKey && undoStack.isNotEmpty()
+    runKey = coalesceKey
+    if (!continuing) {
+      undoStack.addLast(current)
+      if (undoStack.size > HISTORY_STEPS) undoStack.removeFirst()
+    }
     redoStack.clear()
     changed(next)
   }
@@ -133,12 +144,14 @@ class EditorViewModel(
   }
 
   fun undo() {
+    runKey = null
     val previous = undoStack.removeLastOrNull() ?: return
     redoStack.addLast(mutable.value.design)
     changed(restore(previous, mutable.value.design))
   }
 
   fun redo() {
+    runKey = null
     val next = redoStack.removeLastOrNull() ?: return
     undoStack.addLast(mutable.value.design)
     changed(restore(next, mutable.value.design))

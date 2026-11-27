@@ -93,6 +93,9 @@ class LibraryViewModel(
     return id
   }
 
+  /** The design to open, read after any queued action, so a design just created is found. */
+  suspend fun load(id: String): BoardDesign? = working.withLock { graph.store.find(id) }
+
   fun rename(id: String, name: String) {
     val newName = name.trim()
     if (newName.isEmpty()) return
@@ -137,21 +140,23 @@ class LibraryViewModel(
     }
   }
 
-  fun undoDelete() {
+  /**
+   * Ends the undo offer for the design just deleted: [restore] brings it back; otherwise it stays
+   * in the trash until it is purged.
+   */
+  fun endUndo(restore: Boolean) {
     val id = lastDeletedId ?: return
+    lastDeletedId = null
+    if (!restore) {
+      mutable.value = mutable.value.copy(pendingUndo = null)
+      return
+    }
     viewModelScope.launch {
       locked {
         graph.store.restoreDesign(id)
-        lastDeletedId = null
         mutable.value = mutable.value.copy(pendingUndo = null)
       }
     }
-  }
-
-  /** The undo offer is over; the design stays in the trash until it is purged. */
-  fun clearUndo() {
-    lastDeletedId = null
-    mutable.value = mutable.value.copy(pendingUndo = null)
   }
 
   fun clearMessage() {

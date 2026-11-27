@@ -104,7 +104,7 @@ class LibraryViewModelTest {
     assertEquals("Walnut board", vm.state.value.pendingUndo)
     assertTrue("a" in platform.store.trash)
 
-    vm.undoDelete()
+    vm.endUndo(restore = true)
     assertEquals("a", vm.state.value.items.single().id)
     assertNull(vm.state.value.pendingUndo)
   }
