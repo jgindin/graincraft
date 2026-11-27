@@ -117,6 +117,33 @@ class GrainTextureTest {
     }
   }
 
+  private fun luminanceDeviation(pixels: IntArray): Double {
+    val lum = pixels.map {
+      0.299 * channel(it, 16) + 0.587 * channel(it, 8) + 0.114 * channel(it, 0)
+    }
+    val mean = lum.average()
+    return kotlin.math.sqrt(lum.sumOf { (it - mean) * (it - mean) } / lum.size)
+  }
+
+  /**
+   * A 1-1/2" cell at 64 pixels per inch, about how a whole board fills a window, must show its
+   * rings plainly: raw and oiled, for a dark, a pale and a mid-toned wood, on several strips.
+   */
+  @Test
+  fun endGrainRingsShowAtAWholeBoardView() {
+    for (id in listOf("black-walnut", "hard-maple", "american-cherry")) {
+      val wood = species(id)
+      for (tones in listOf(wood.raw, wood.oiled)) {
+        for (strip in 0 until 4) {
+          val spec =
+            TextureSpec(tones, wood.poreType, Fibre.Z, textureSeed(id, strip, 0), false, 64f)
+          val sd = luminanceDeviation(GrainTexture.render(spec, 96, 96))
+          assertTrue(sd >= 12.0, "$id strip $strip luminance deviation $sd")
+        }
+      }
+    }
+  }
+
   @Test
   fun differentStripsDiffer() {
     val a = GrainTexture.render(spec(seed = textureSeed("black-walnut", 0, 0)), 64, 64)

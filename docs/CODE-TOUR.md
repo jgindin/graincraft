@@ -191,8 +191,9 @@ In [app/.../app/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/) an
   save text to a chosen path), `ExternalBrowser` (open a file or folder with the desktop's apps)
   and `Clock`. `desktopMain/.../platform/DesktopPlatform.kt` implements them with FileKit and
   `xdg-open`.
-- `AppGraph` carries the store, dialogs, browser, clock and id source; `Main.kt` builds the real
-  one, tests build one from `testutil/FakePlatform.kt` and `FakeWorkspaceStore.kt`.
+- `AppGraph` carries the store, dialogs, browser, clock, id source and the `ArgbImageFactory` for
+  grain textures; `Main.kt` builds the real one, tests build one from `testutil/FakePlatform.kt`
+  and `FakeWorkspaceStore.kt`.
 - `App(graph)` creates the `SettingsViewModel`, picks light or dark from the theme setting,
   provides `LocalUnitFormatter` (in `ui/LocalUnitFormatter.kt`) and shows `AppScaffold`: the
   `NavigationRail` with the four `Destination`s (`Destination.kt`, with their icons and test-tag
@@ -264,3 +265,29 @@ In [ui/editor/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/edi
   change pending for the next edit or flush.
 - The debounces run in an injectable scope and compile dispatcher, so `EditorViewModelTest` drives
   them with virtual time.
+
+## 17. Board preview
+
+In [ui/preview/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/preview/).
+
+- `BoardPreview` draws a `BoardLayout` with zoom buttons, wheel zoom, drag to pan, a hover
+  `PlainTooltip` (species, strip, slice) and an optional dimensions label. The zoom pill and the
+  label sit in a band along the bottom, and the fitted board stays above it. Chrome colours come
+  in as `BoardPreviewColors` (from the theme by default); the board is coloured by its woods.
+  Only pieces on screen get their textures rendered.
+- `PreviewTransform` maps board inches to screen pixels: `fit` centres the board with a 5% margin,
+  `zoomAt` keeps the point under the pointer still and clamps zoom to 0.25–8 times the fit.
+  `PreviewView` (private) keeps the board fitted until the user zooms or pans.
+- `BoardDrawing.kt` prepares each piece once per layout and finish: its texture `TextureSpec` and
+  its texture frame. An end-grain cell's frame is its source strip's largest cell on the board
+  (by species, strip and lamination), so every slice of a strip shows the same rings and a cell
+  trimmed more than the others shows part of the same frame. End-grain textures are drawn
+  transposed (texture x along board y), so `mirrored` turns a rotated row's cells end for end.
+- `TextureCache` renders `GrainTexture` pixels into bitmaps, keyed by spec and size, least
+  recently used out past 256. `bucketPixelsPerInch` rounds the view density up to a power of two
+  from 16 to 256 so zooming re-renders only when it doubles or halves.
+- Common Compose has no fast pixels-to-bitmap call, so `ArgbImageFactory` is a platform service:
+  `desktopMain/.../platform/SkiaArgbImageFactory.kt` copies the pixels into a Skia bitmap once.
+  `AppShell` provides it as `LocalArgbImageFactory` from the `AppGraph`.
+- `BoardPreviewScreenshotTest` records examples A, B and C (rebuilt in `PreviewExamples.kt` from the
+  worked examples) in both finishes, stripes with a corner radius and groove, and A with dimensions.

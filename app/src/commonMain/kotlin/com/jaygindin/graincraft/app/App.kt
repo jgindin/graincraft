@@ -15,6 +15,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jaygindin.graincraft.app.ui.LocalUnitFormatter
 import com.jaygindin.graincraft.app.ui.library.LibraryScreen
 import com.jaygindin.graincraft.app.ui.library.LibraryViewModel
+import com.jaygindin.graincraft.app.ui.preview.LocalArgbImageFactory
 import com.jaygindin.graincraft.app.ui.settings.SettingsScreen
 import com.jaygindin.graincraft.app.ui.settings.SettingsViewModel
 import com.jaygindin.graincraft.app.ui.shop.ShopScreen
@@ -65,7 +66,7 @@ internal fun AppShell(graph: AppGraph, version: String) {
   var destination by rememberSaveable { mutableStateOf(Destination.DESIGNS) }
 
   GrainCraftTheme(dark) {
-    CompositionLocalProvider(LocalUnitFormatter provides formatter) {
+    CompositionLocalProvider(*appLocals(formatter, graph)) {
       AppScaffold(
         current = destination,
         onSelect = {
@@ -92,6 +93,10 @@ internal fun AppShell(graph: AppGraph, version: String) {
     }
   }
 }
+
+/** What every screen reads from the composition: the units and the platform's bitmap factory. */
+private fun appLocals(formatter: UnitFormatter, graph: AppGraph) =
+  arrayOf(LocalUnitFormatter provides formatter, LocalArgbImageFactory provides graph.images)
 
 @Composable
 private fun RailScreen(

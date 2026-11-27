@@ -2,8 +2,8 @@ package com.jaygindin.graincraft.core.wood
 
 private const val SOFT_BELOW = 900
 private const val TOO_SOFT_BELOW = 600
-private const val LATEWOOD_FACTOR = 0.85
-private const val PORE_FACTOR = 0.65
+private const val LATEWOOD_FACTOR = 0.68
+private const val PORE_FACTOR = 0.52
 private const val CHANNEL = 0xFF
 private const val RED_BITS = 16
 private const val GREEN_BITS = 8
