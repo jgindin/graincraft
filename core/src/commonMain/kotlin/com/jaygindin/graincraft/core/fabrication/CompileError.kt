@@ -12,6 +12,9 @@ sealed interface CompileError {
 
   data class NonPositiveWidth(val stripIndex: Int) : CompileError
 
+  /** A strip, as drawn or once fitted to the board's width, is outside the buildable range. */
+  data class StripOutOfRange(val stripIndex: Int, val min: Length, val max: Length) : CompileError
+
   data class NonPositiveDimension(val field: String) : CompileError
 
   data class UnknownSpecies(val id: String) : CompileError

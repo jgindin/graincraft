@@ -7,11 +7,13 @@ import com.jaygindin.graincraft.core.design.Dimensions
 import com.jaygindin.graincraft.core.design.EdgeTreatments
 import com.jaygindin.graincraft.core.design.GrainMode
 import com.jaygindin.graincraft.core.design.PatternSpec
+import com.jaygindin.graincraft.core.design.WorkspaceJson
 import com.jaygindin.graincraft.core.shop.ShopProfile
 import com.jaygindin.graincraft.core.units.FractionPrecision
 import com.jaygindin.graincraft.core.units.Length
 import com.jaygindin.graincraft.core.units.LengthUnit
 import com.jaygindin.graincraft.core.wood.WoodCatalog
+import com.jaygindin.graincraft.core.wood.WoodSpecies
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
@@ -30,6 +32,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.builtins.ListSerializer
 
 abstract class StoreTestBase {
   protected val root: Path = Files.createTempDirectory("graincraft-store")
@@ -132,6 +135,33 @@ class FileWorkspaceStoreTest : StoreTestBase() {
       f.writeText("{")
       store.saveDesign(design("x"))
       assertIs<StoredDesign.Readable>(store.listDesigns().single())
+    }
+
+  @Test
+  fun copiedFileIsListedAsUnreadable() =
+    runBlocking<Unit> {
+      store.saveDesign(design("a"))
+      val copy = root.resolve("designs").resolve("a copy.graincraft.json")
+      Files.copy(file("designs", "a"), copy)
+      val listed = store.listDesigns()
+      assertEquals(
+        listOf("a.graincraft.json", "a copy.graincraft.json"),
+        listed.map { it.fileName },
+      )
+      assertEquals(design("a"), (listed[0] as StoredDesign.Readable).design)
+      val reason = (listed[1] as StoredDesign.Unreadable).reason
+      assertTrue("does not match its file name" in reason, reason)
+      assertEquals(file("designs", "a").readText(), copy.readText())
+    }
+
+  @Test
+  fun saveNeverReplacesAFileHoldingAnotherDesign() =
+    runBlocking<Unit> {
+      store.saveDesign(design("b"))
+      val text = file("designs", "b").readText()
+      file("designs", "a").writeText(text)
+      assertFailsWith<IllegalStateException> { store.saveDesign(design("a")) }
+      assertEquals(text, file("designs", "a").readText())
     }
 
   @Test
@@ -245,17 +275,81 @@ class WorkspaceStoreFilesTest : StoreTestBase() {
     }
 
   @Test
-  fun corruptSettingsLoadDefaultsAndAreNotOverwrittenUntilSaved() =
+  fun everySettingsFileCarriesItsSchemaVersion() =
     runBlocking<Unit> {
-      root.resolve("settings.json").writeText("not json")
-      root.resolve("shop-profile.json").writeText("[")
-      root.resolve("custom-woods.json").writeText("{")
-      assertEquals(AppSettings(), store.loadSettings())
+      store.saveSettings(AppSettings(theme = ThemeChoice.DARK))
+      store.saveShopProfile(ShopProfile())
+      store.saveCustomWoods(listOf(WoodCatalog.builtIns.first().copy(id = "mine", custom = true)))
+      for (name in listOf("settings.json", "shop-profile.json", "custom-woods.json")) {
+        val text = root.resolve(name).readText()
+        assertTrue(text.contains("\"schemaVersion\": 1"), "$name: $text")
+      }
+      assertTrue(root.resolve("custom-woods.json").readText().contains("\"woods\""))
+      assertEquals("mine", store.loadCustomWoods().single().id)
+      assertEquals(ThemeChoice.DARK, store.loadSettings().theme)
+    }
+
+  @Test
+  fun filesWithoutASchemaVersionAreVersionOne() =
+    runBlocking<Unit> {
+      root.resolve("settings.json").writeText("""{"theme": "LIGHT"}""")
+      val wood = WoodCatalog.builtIns.first().copy(id = "mine", custom = true)
+      root
+        .resolve("custom-woods.json")
+        .writeText(
+          WorkspaceJson.json.encodeToString(ListSerializer(WoodSpecies.serializer()), listOf(wood)),
+        )
+      assertEquals(ThemeChoice.LIGHT, store.loadSettings().theme)
+      assertEquals(listOf(wood), store.loadCustomWoods())
+      assertTrue(store.notices.pending.value.isEmpty())
+    }
+
+  private fun keptAside(stem: String) = root.resolve("$stem.unreadable-$now.json")
+
+  @Test
+  fun newerSchemaProfileIsNotOverwritten() =
+    runBlocking<Unit> {
+      val text = """{"schemaVersion": 2, "kerf": 1}"""
+      root.resolve("shop-profile.json").writeText(text)
       assertEquals(ShopProfile(), store.loadShopProfile())
+      assertEquals(text, keptAside("shop-profile").readText())
+      assertEquals(
+        listOf(
+          "Couldn't read your shop profile; it was kept as shop-profile.unreadable-$now.json",
+        ),
+        store.notices.pending.value,
+      )
+      store.saveShopProfile(ShopProfile(kerf = Length.inches(0, 3, 32)))
+      assertEquals(text, keptAside("shop-profile").readText())
+      assertEquals(Length.inches(0, 3, 32), store.loadShopProfile().kerf)
+    }
+
+  @Test
+  fun corruptCustomWoodsArePreserved() =
+    runBlocking<Unit> {
+      root.resolve("custom-woods.json").writeText("{")
       assertEquals(emptyList(), store.loadCustomWoods())
-      assertEquals("not json", root.resolve("settings.json").readText())
-      assertEquals("[", root.resolve("shop-profile.json").readText())
+      assertFalse(root.resolve("custom-woods.json").exists())
+      assertEquals("{", keptAside("custom-woods").readText())
+      assertEquals(
+        listOf("Couldn't read your custom woods; it was kept as custom-woods.unreadable-$now.json"),
+        store.notices.pending.value,
+      )
+    }
+
+  @Test
+  fun corruptOrNewerSettingsArePreserved() =
+    runBlocking<Unit> {
+      root.resolve("settings.json").writeText("""{"schemaVersion": 7}""")
+      assertEquals(AppSettings(), store.loadSettings())
+      assertEquals("""{"schemaVersion": 7}""", keptAside("settings").readText())
       store.saveSettings(AppSettings(theme = ThemeChoice.LIGHT))
       assertEquals(ThemeChoice.LIGHT, store.loadSettings().theme)
+      assertEquals(
+        listOf("Couldn't read your settings; it was kept as settings.unreadable-$now.json"),
+        store.notices.pending.value,
+      )
+      store.notices.dismiss(store.notices.pending.value.single())
+      assertTrue(store.notices.pending.value.isEmpty())
     }
 }

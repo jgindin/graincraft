@@ -3,6 +3,7 @@ package com.jaygindin.graincraft.app
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.v2.runComposeUiTest
@@ -27,5 +28,20 @@ class AppShellTest {
         onNodeWithTag("screen-$other").assertDoesNotExist()
       }
     }
+  }
+
+  @Test
+  fun aSettingsFileKeptAsideIsReportedOnce() = runComposeUiTest {
+    val platform = FakePlatform()
+    val notice = "Couldn't read your custom woods; it was kept as custom-woods.unreadable-1.json"
+    platform.store.notices.add(notice)
+    setContent { App(platform.graph) }
+
+    waitUntil(timeoutMillis = 10_000) {
+      onAllNodesWithText(notice).fetchSemanticsNodes().isNotEmpty()
+    }
+    onNodeWithTag("app-notice").assertExists()
+    // Shown means handled: the store forgets it, so it is not shown again.
+    waitUntil(timeoutMillis = 10_000) { platform.store.notices.pending.value.isEmpty() }
   }
 }

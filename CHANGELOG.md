@@ -2,6 +2,30 @@
 
 Newest first. The version matches `version.properties`.
 
+## 0.25 (not yet released)
+
+- Pattern sizes are bounded: strips and mortar 1/32" to 36", cells, bricks and row heights 1/4" to
+  36". A typo such as a 1 mm cell or a 300" strip now shows an error instead of hanging the app or
+  overflowing, and a design saved that way no longer stops the library from opening. A strip that
+  scales below 1/32" to fit the width is an error too.
+- A juice groove that does not fit the board is no longer drawn, and the Issues tab warns "The
+  juice groove doesn't fit." Before, it closed the app; an oversized corner radius is clamped.
+- A design file copied by hand in the designs folder shows as "Can't open" (its id does not match
+  its file name) instead of crashing the library at start; import it to add it as a new design.
+  A save never replaces a file holding another design.
+- Library actions (new, rename, duplicate, delete, restore, import, export) that fail show
+  "Couldn't <action>: <reason>" instead of closing the app, and an imported design whose id cannot
+  name a file gets a new one.
+- The library compiles its thumbnails off the main thread, and waits for typing in Shop (or other
+  woods, profile and units changes) to stop before rebuilding them.
+- The shop profile, settings and custom woods files carry `schemaVersion`. A damaged one, or one a
+  newer version wrote, is kept as `<name>.unreadable-<time>.json` and you are told once, instead of
+  being overwritten with defaults.
+- The Lumber tab and the shop packet show the same cut list: Wood, Qty, Size (W × H × L), Mill
+  from and Panels, with a legend for W, H and L. Laminated parts say "glued from two boards" and a
+  part no stock fits says to laminate or buy thicker stock. The packet no longer calls a strip's
+  height its thickness.
+
 ## 0.24 (not yet released)
 
 - Export packet: saves the shop packet through a save dialog as `<design name> - shop packet.html`

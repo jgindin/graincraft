@@ -2,6 +2,7 @@ package com.jaygindin.graincraft.core.compile
 
 import com.jaygindin.graincraft.core.audit.Issue
 import com.jaygindin.graincraft.core.audit.audit
+import com.jaygindin.graincraft.core.audit.auditEdges
 import com.jaygindin.graincraft.core.design.BoardDesign
 import com.jaygindin.graincraft.core.design.PatternSpec
 import com.jaygindin.graincraft.core.fabrication.CompileError
@@ -88,7 +89,10 @@ object DesignCompiler {
         cutList = parts,
         lumber = lumber,
         stages = planStages(design, fabrication, parts, lumber, woods, profile, formatter),
-        issues = audit(design.grainMode, fit.actual, fit, woods, formatter),
+        issues =
+          (audit(design.grainMode, fit.actual, fit, woods, formatter) +
+              auditEdges(design.edges, fit.actual, formatter))
+            .sortedByDescending { it.severity },
       ),
     )
   }
@@ -105,11 +109,14 @@ object DesignCompiler {
 fun CompileError.message(formatter: UnitFormatter): String =
   when (this) {
     is CompileError.OutOfRange ->
-      "The ${field} must be between ${formatter.format(min)} and ${formatter.format(max)}."
+      "The ${fieldName(field)} must be between ${formatter.format(min)} and ${formatter.format(max)}."
     CompileError.PatternNotAllowedInEdgeGrain ->
       "Edge-grain boards can only be striped; checkerboard and brick patterns need end grain."
     CompileError.NoStrips -> "Add at least one strip."
     is CompileError.NonPositiveWidth -> "Strip ${stripIndex + 1} needs a width greater than zero."
+    is CompileError.StripOutOfRange ->
+      "Strip ${stripIndex + 1} must be between ${formatter.format(min)} and " +
+        "${formatter.format(max)} wide on the finished board."
     is CompileError.NonPositiveDimension -> "The ${fieldName(field)} must be greater than zero."
     is CompileError.UnknownSpecies -> "The wood \"$id\" is not in your wood list."
     is CompileError.NoValidSplit ->

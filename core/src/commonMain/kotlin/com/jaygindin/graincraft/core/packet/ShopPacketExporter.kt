@@ -4,7 +4,7 @@ import com.jaygindin.graincraft.core.audit.Issue
 import com.jaygindin.graincraft.core.audit.Severity
 import com.jaygindin.graincraft.core.compile.CompiledDesign
 import com.jaygindin.graincraft.core.design.GrainMode
-import com.jaygindin.graincraft.core.fabrication.CutPart
+import com.jaygindin.graincraft.core.fabrication.cutListTable
 import com.jaygindin.graincraft.core.fabrication.formatBoardFeet
 import com.jaygindin.graincraft.core.guide.CalloutKind
 import com.jaygindin.graincraft.core.guide.Stage
@@ -151,20 +151,17 @@ private class PacketContext(
 
   fun cutList(): String =
     section("Cut list") {
-      append("<table>\n<tr><th>Species</th><th>Qty</th><th>Size (thickness × width × length)</th>")
-      append("<th>Mill from</th><th>Panels</th></tr>\n")
-      for (part in compiled.cutList) append(partRow(part))
-      append("</table>\n")
+      val table = cutListTable(compiled.cutList, woods, formatter)
+      append("<table>\n<tr>")
+      for (header in table.headers) append("<th>${escapeHtml(header)}</th>")
+      append("</tr>\n")
+      for (row in table.rows) {
+        append("<tr><td>${swatch(row.speciesId)}${escapeHtml(row.cells.first())}</td>")
+        for (cell in row.cells.drop(1)) append("<td>${escapeHtml(cell)}</td>")
+        append("</tr>\n")
+      }
+      append("</table>\n<p>${escapeHtml(table.legend)}</p>\n")
     }
-
-  private fun partRow(p: CutPart): String {
-    val from =
-      p.stock?.let { "${it.label} stock, ${f(p.fromThickness)} thick, rip ${f(p.ripWidth)}" } ?: ""
-    val lamination = if (p.laminated) " (glue two boards)" else ""
-    return "<tr><td>${swatch(p.speciesId)}${speciesName(p.speciesId)}</td><td>${p.count}</td>" +
-      "<td>${f(p.height)} × ${f(p.width)} × ${f(p.length)}$lamination</td>" +
-      "<td>$from</td><td>${escapeHtml(p.panelNames.joinToString(", "))}</td></tr>\n"
-  }
 
   fun settings(): String =
     section("Shop settings") {

@@ -73,6 +73,9 @@ private fun fitStripes(
   pattern: PatternSpec.Stripes,
 ): FitResult {
   val widths = scaleToWidth(pattern.strips.map { it.width }, target.width)
+  // A narrow strip beside much wider ones can scale down to almost nothing.
+  val tooNarrow = widths.indexOfFirst { it < STRIP_RANGE.start }
+  if (tooNarrow >= 0) return FitResult.Failed(stripOutOfRange(tooNarrow))
   val columns =
     pattern.strips.mapIndexed { i, s -> FitStrip(s.speciesId, widths[i], StripRole.PLAIN) }
   val rows =

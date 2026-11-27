@@ -25,6 +25,7 @@ enum class IssueCode {
   COLOR_BLEED,
   STRIP_TOO_THIN,
   END_GRAIN_TOO_THIN,
+  JUICE_GROOVE_DOES_NOT_FIT,
 }
 
 data class Issue(
