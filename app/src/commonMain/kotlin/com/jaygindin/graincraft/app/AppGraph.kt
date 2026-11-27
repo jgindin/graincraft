@@ -5,6 +5,8 @@ import com.jaygindin.graincraft.app.platform.Clock
 import com.jaygindin.graincraft.app.platform.ExternalBrowser
 import com.jaygindin.graincraft.app.platform.FileDialogs
 import com.jaygindin.graincraft.app.ui.preview.ArgbImageFactory
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 
 /**
  * The platform services every screen may need, built once by the entry point and passed down; tests
@@ -12,6 +14,8 @@ import com.jaygindin.graincraft.app.ui.preview.ArgbImageFactory
  *
  * @param newId a fresh design id, safe to use as a file name.
  * @param images turns grain texture pixels into bitmaps for the board preview.
+ * @param compute where the library compiles its designs, off the main thread; tests pass an
+ *   immediate dispatcher so the library is ready when the UI is idle.
  */
 class AppGraph(
   val store: WorkspaceStore,
@@ -20,4 +24,5 @@ class AppGraph(
   val clock: Clock,
   val newId: () -> String,
   val images: ArgbImageFactory,
+  val compute: CoroutineDispatcher = Dispatchers.Default,
 )

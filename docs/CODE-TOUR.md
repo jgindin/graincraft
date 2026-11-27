@@ -78,7 +78,8 @@ In [core/.../design/](../core/src/commonMain/kotlin/com/jaygindin/graincraft/cor
 - `BoardDesign.kt` is a saved design: grain mode, finished size, a pattern and edge treatments.
 - `PatternSpec.kt` is the sealed pattern type (`Stripes`, `Checkerboard`, `Brick`), written to JSON
   with a `"type"` field.
-- `EdgeTreatments.kt` holds the edge details and the end-grain `FlatteningMethod`.
+- `EdgeTreatments.kt` holds the edge details and the end-grain `FlatteningMethod`;
+  `JuiceGroove.fitsOn(length, width)` says whether a groove leaves wood inside it.
 - `StripePresets.kt` fills a strip list (uniform, alternating, mirror, Fibonacci, pinstripe).
 - `DesignJson.kt` encodes and decodes design files. It reads `schemaVersion` before anything else,
   so a file from a newer app is reported as such even if its shape has changed. `WorkspaceJson`
@@ -91,6 +92,10 @@ In [core/.../fabrication/](../core/src/commonMain/kotlin/com/jaygindin/graincraf
 
 - `PatternFit.kt` turns a pattern and a target size into finished column widths, rows and the
   actual size reached. Widths are finished widths; trim allowances are added later.
+  `PatternFitValidation.kt` checks the size ranges and bounds every pattern element first (strips
+  and mortar 1/32" to 36", cells, bricks and row heights 1/4" to 36"), so a typo cannot build a
+  board of millions of pieces or overflow the fitting arithmetic; a strip that scales below 1/32"
+  fails too (`StripOutOfRange`).
 - `CompileError.kt` lists the reasons a design cannot be compiled, shared by the later build steps.
 - `Flattening.kt` picks the tool that flattens a long-grain panel (planer, drum sander, or the
   profile's end-grain method) with its allowance and width limit, and `splitLimit` gives the width
@@ -108,6 +113,10 @@ In [core/.../fabrication/](../core/src/commonMain/kotlin/com/jaygindin/graincraf
   thickness (laminated from two halves when wider than the thickest stock); other parts take
   whichever orientation needs fewer board feet. `lumber` sums board feet per species with kerf and
   milling waste, and `formatBoardFeet` shows them to 0.1 BF.
+- `CutListTable.kt` has `cutListTable(parts, woods, formatter)`, the one written form of the cut
+  list (Wood, Qty, Size W × H × L, Mill from, Panels, and a legend). A laminated part says "glued
+  from two boards" and a part no stock fits says to laminate or buy thicker stock. The Lumber tab
+  and the shop packet both show these rows.
 
 ## 6. Layout of the finished board
 
@@ -129,6 +138,8 @@ In [core/.../audit/](../core/src/commonMain/kotlin/com/jaygindin/graincraft/core
   sorted AVOID, WARNING, INFO. It reads the species from the fit's columns and checks species
   suitability for the grain mode, Janka spread, colour bleed, thin strips and mortar lines,
   end-grain thickness and oily woods. Unknown species ids are skipped.
+- `EdgeAuditor.kt` holds `auditEdges(edges, finished, formatter)`: a juice groove that does not
+  fit the board is a warning (the preview leaves it out).
 
 ## 8. Build guide and compiler
 
@@ -151,7 +162,7 @@ In [core/.../guide/](../core/src/commonMain/kotlin/com/jaygindin/graincraft/core
   written by hand so the JVM and Wasm give identical text.
 - `DesignCompiler.kt` runs the whole pipeline: it adds the design's embedded custom woods, checks
   every species id, fits, builds the fabrication, cut list, lumber, layout (at the fitted size),
-  warnings and stages, or returns `CompileResult.Failed`. `CompileError.message` gives each error
+  warnings (wood and edge) and stages, or returns `CompileResult.Failed`. `CompileError.message` gives each error
   as one sentence in the user's units.
 
 ## 9. Grain textures
@@ -170,7 +181,8 @@ In [core/.../packet/](../core/src/commonMain/kotlin/com/jaygindin/graincraft/cor
 
 - `ShopPacketExporter.kt`: `html(compiled, woods, profile, formatter)` returns one self-contained
   page (inline CSS with `@media print`, inline SVG): cover with a flat top-view board drawing in raw
-  species colours, issues, shopping list, cut list, each stage with its diagram, and the shop
+  species colours, issues, shopping list, cut list (from `cutListTable`), each stage with its
+  diagram, and the shop
   settings. `defaultFileName(name)` gives `"<name> - shop packet.html"`. All text is escaped.
 
 ## 11. App theme
@@ -201,8 +213,15 @@ In [app/.../data/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/dat
   `custom-woods.json` and `settings.json` under `xdgDataRoot(...)`.
 - Every write goes to `<name>.tmp` and is renamed over the target. A design file that does not
   parse, or was made by a newer version, is listed as `Unreadable` and never overwritten; trash
-  and restore refuse to replace an existing file. Profile, woods and settings that fail to parse
-  load defaults and stay on disk until the next explicit save.
+  and restore refuse to replace an existing file. A design is identified by its file name: a file
+  whose id does not match its name (a copy made by hand) is listed as `Unreadable`, and a save
+  never replaces a file holding another design. `isValidDesignId` says whether an id can name a
+  file.
+- `SettingsFile.kt` (desktop) writes the profile, settings and custom woods as
+  `{"schemaVersion": 1, ...}` (custom woods under `"woods"`); a file without a version, or a bare
+  woods list, is version 1. A file that cannot be read or was written by a newer version is
+  renamed to `<name>.unreadable-<millis>.json` before defaults load, and a sentence for the user
+  goes to the store's `StoreNotices`, which `App` shows once in a snackbar.
 
 ## 13. App shell and Settings
 
@@ -214,8 +233,9 @@ In [app/.../app/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/) an
   `Failed(reason)`, never throwing), `ExternalBrowser` (open a file or folder with the desktop's apps)
   and `Clock`. `desktopMain/.../platform/DesktopPlatform.kt` implements them with FileKit and
   `xdg-open`.
-- `AppGraph` carries the store, dialogs, browser, clock, id source and the `ArgbImageFactory` for
-  grain textures; `Main.kt` builds the real one, tests build one from `testutil/FakePlatform.kt`
+- `AppGraph` carries the store, dialogs, browser, clock, id source, the `ArgbImageFactory` for
+  grain textures and `compute`, the dispatcher the library compiles on (tests pass an immediate
+  one); `Main.kt` builds the real one, tests build one from `testutil/FakePlatform.kt`
   and `FakeWorkspaceStore.kt`.
 - `App(graph)` creates the `SettingsViewModel`, picks light or dark from the theme setting,
   provides `LocalUnitFormatter` (in `ui/LocalUnitFormatter.kt`) and shows `AppScaffold`: the
@@ -239,11 +259,15 @@ In [ui/library/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/li
 [ui/preview/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/preview/).
 
 - `LibraryViewModel` lists the store's designs, compiles each with `DesignCompiler` for its
-  thumbnail and summary, and offers `create`, `rename`, `duplicate`, `delete` / `undoDelete`,
-  `importFile` (a clashing id gets a new id and " (imported)") and `exportFile`. Actions run one at
-  a time and a store refusal becomes `LibraryState.message`.
-- `NewDesignDefaults.kt` has `PatternKind` and `defaultPattern(kind)`, the starting pattern of a new
-  design (the editor reuses it).
+  thumbnail and summary, and offers `create`, `rename`, `duplicate`, `delete` / `endUndo`,
+  `importFile` (a clashing id gets a new id and " (imported)", an id that cannot name a file gets
+  a new id) and `exportFile`. `LibraryWork` runs the actions one at a time, turns any failure into
+  "Couldn't <action>: <reason>" in `LibraryState.message`, and compiles the list on
+  `AppGraph.compute`, off the main thread. `inputsChanged()` (called by `App` when the woods,
+  profile or units change) waits 300 ms for the changes to stop and skips the rebuild when they end
+  where they began.
+- `PatternKind.kt` has `PatternKind`, and `NewDesignDefaults.kt` has `defaultPattern(kind)`, the
+  starting pattern of a new design (the editor reuses it).
 - `LibraryScreen` is the card grid (`LazyVerticalGrid`) with the card menu, rename dialog, the empty
   state and the Undo snackbar; `NewDesignDialog` asks for name, grain, pattern and size (edge grain
   disables checkerboard and brick). Unreadable files show as "Can't open" cards.
@@ -309,6 +333,8 @@ In [ui/preview/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/pr
   (by species, strip and lamination), so every slice of a strip shows the same rings and a cell
   trimmed more than the others shows part of the same frame. End-grain textures are drawn
   transposed (texture x along board y), so `mirrored` turns a rotated row's cells end for end.
+  A juice groove that does not fit the board is not drawn, and corner radii are clamped to the
+  board, so no live edit can make drawing throw.
 - `TextureCache` renders `GrainTexture` pixels into bitmaps, keyed by spec and size, least
   recently used out past 256. `bucketPixelsPerInch` rounds the view density up to a power of two
   from 16 to 256 so zooming re-renders only when it doubles or halves.
@@ -341,8 +367,8 @@ In [ui/editor/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/edi
   from 0), "Add strip", the presets menu over `StripePresets`, and the row height for end grain.
 - `ResultsPane.kt` switches between `IssuesTab` (compile errors, then issues with severity icons in
   rating colours, then fit notes), `BuildTab` (a card per stage with steps, callouts and
-  `DiagramCanvas`) and `LumberTab` (board feet per species, the total, and the cut list as a table
-  of rows). Build and Lumber wait for a design that compiles.
+  `DiagramCanvas`) and `LumberTab` (board feet per species, the total, and the cut list from
+  core's `cutListTable`, the same rows the packet prints). Build and Lumber wait for a design that compiles.
 - `DiagramCanvas` draws a core `Diagram` (inches) scaled to its width; below 20 dp an inch it
   stays at that scale and scrolls sideways so its labels can be read. Box fills are wood colours,
   hatched boxes get diagonal lines, and strokes use the theme's ink.

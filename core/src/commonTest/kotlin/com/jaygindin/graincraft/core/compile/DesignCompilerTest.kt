@@ -2,8 +2,11 @@ package com.jaygindin.graincraft.core.compile
 
 import com.jaygindin.graincraft.core.Examples
 import com.jaygindin.graincraft.core.Examples.inch
+import com.jaygindin.graincraft.core.audit.IssueCode
 import com.jaygindin.graincraft.core.audit.audit
 import com.jaygindin.graincraft.core.design.BoardDesign
+import com.jaygindin.graincraft.core.design.EdgeTreatments
+import com.jaygindin.graincraft.core.design.JuiceGroove
 import com.jaygindin.graincraft.core.design.PatternSpec
 import com.jaygindin.graincraft.core.design.Strip
 import com.jaygindin.graincraft.core.fabrication.CompileError
@@ -15,6 +18,10 @@ import com.jaygindin.graincraft.core.fabrication.fitPattern
 import com.jaygindin.graincraft.core.fabrication.formatBoardFeet
 import com.jaygindin.graincraft.core.guide.StageKind
 import com.jaygindin.graincraft.core.shop.ShopProfile
+import com.jaygindin.graincraft.core.units.FractionPrecision
+import com.jaygindin.graincraft.core.units.Length
+import com.jaygindin.graincraft.core.units.LengthUnit
+import com.jaygindin.graincraft.core.units.UnitFormatter
 import com.jaygindin.graincraft.core.wood.PoreType
 import com.jaygindin.graincraft.core.wood.Rgb
 import com.jaygindin.graincraft.core.wood.WoodSpecies
@@ -198,6 +205,43 @@ class DesignCompilerTest {
     assertTrue("cell size" in errors[4].message(Examples.fmt))
     assertTrue("no-such-wood" in errors[5].message(Examples.fmt))
     assertTrue("12\"" in errors[6].message(Examples.fmt))
+  }
+
+  @Test
+  fun tinyAndHugeElementsFailThroughCompile() {
+    val cell =
+      Examples.a.copy(
+        pattern = PatternSpec.Checkerboard("black-walnut", "hard-maple", Length.millimetres(1.0)),
+      )
+    val tinyStrip =
+      Examples.b.copy(
+        pattern = PatternSpec.Stripes(listOf(Strip("black-walnut", Length.inchesApprox(1e-6)))),
+      )
+    val hugeStrip =
+      Examples.b.copy(
+        finished = Examples.b.finished.copy(width = inch(24)),
+        pattern = PatternSpec.Stripes(listOf(Strip("black-walnut", inch(300)))),
+      )
+    for (design in listOf(cell, tinyStrip, hugeStrip)) {
+      assertTrue(compile(design) is CompileResult.Failed, "expected Failed for ${design.pattern}")
+    }
+  }
+
+  @Test
+  fun aGrooveTooWideForTheBoardIsAWarningNotAFailure() {
+    val groove = JuiceGroove(width = inch(6), depth = inch(0, 1, 4), inset = inch(1))
+    val design = Examples.b.copy(edges = EdgeTreatments(juiceGroove = groove))
+    val compiled = ok(design)
+    assertTrue(compiled.issues.any { it.code == IssueCode.JUICE_GROOVE_DOES_NOT_FIT })
+  }
+
+  @Test
+  fun elementRangeMessagesNameTheField() {
+    val cell = CompileError.OutOfRange("targetCell", inch(0, 1, 4), inch(36)).message(Examples.fmt)
+    assertEquals("The cell size must be between 1/4\" and 36\".", cell)
+    val fine = UnitFormatter(LengthUnit.INCH, FractionPrecision.THIRTY_SECOND)
+    val strip = CompileError.StripOutOfRange(1, inch(0, 1, 32), inch(36)).message(fine)
+    assertEquals("Strip 2 must be between 1/32\" and 36\" wide on the finished board.", strip)
   }
 
   private fun CompiledDesign.kinds(): List<StageKind> = stages.map { it.kind }

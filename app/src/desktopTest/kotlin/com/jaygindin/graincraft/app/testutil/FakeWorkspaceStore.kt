@@ -1,6 +1,7 @@
 package com.jaygindin.graincraft.app.testutil
 
 import com.jaygindin.graincraft.app.data.AppSettings
+import com.jaygindin.graincraft.app.data.StoreNotices
 import com.jaygindin.graincraft.app.data.StoredDesign
 import com.jaygindin.graincraft.app.data.WorkspaceStore
 import com.jaygindin.graincraft.core.design.BoardDesign
@@ -20,6 +21,8 @@ class FakeWorkspaceStore(
   private val clock: () -> Long = { 0L },
   override val rootDescription: String = "/home/maker/.local/share/graincraft-studio",
 ) : WorkspaceStore {
+  override val notices = StoreNotices()
+
   /** Designs by id. */
   val designs = linkedMapOf<String, BoardDesign>()
 
@@ -29,29 +32,41 @@ class FakeWorkspaceStore(
   /** Files that cannot be opened, listed after the readable designs. */
   val unreadable = mutableListOf<StoredDesign.Unreadable>()
 
+  /** When set, every design write (save, trash, restore) throws it, as a full disk would. */
+  var writeFailure: Exception? = null
+
   val savedSettings = mutableListOf<AppSettings>()
   val savedDesigns = mutableListOf<BoardDesign>()
   val savedShopProfiles = mutableListOf<ShopProfile>()
   val savedCustomWoods = mutableListOf<List<WoodSpecies>>()
 
+  /** How many times the designs were listed, once for each library refresh. */
+  var listCount = 0
+    private set
+
   override suspend fun listDesigns(): List<StoredDesign> =
-    designs.values
+    also { listCount++ }
+      .designs
+      .values
       .sortedByDescending { it.updatedAtMillis }
       .map { StoredDesign.Readable("${it.id}.graincraft.json", it) } +
       unreadable.sortedBy { it.fileName }
 
   override suspend fun saveDesign(design: BoardDesign) {
+    writeFailure?.let { throw it }
     savedDesigns += design
     designs[design.id] = design
   }
 
   override suspend fun trashDesign(id: String) {
+    writeFailure?.let { throw it }
     val design = designs.remove(id) ?: return
     check(id !in trash) { "The trash already holds $id" }
     trash[id] = design to clock()
   }
 
   override suspend fun restoreDesign(id: String) {
+    writeFailure?.let { throw it }
     val (design, _) = trash[id] ?: return
     check(id !in designs) { "A design $id already exists" }
     trash.remove(id)

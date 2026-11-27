@@ -5,6 +5,7 @@ import com.jaygindin.graincraft.app.platform.ExternalBrowser
 import com.jaygindin.graincraft.app.platform.FileDialogs
 import com.jaygindin.graincraft.app.platform.SaveResult
 import com.jaygindin.graincraft.app.platform.SkiaArgbImageFactory
+import kotlinx.coroutines.Dispatchers
 
 /** File dialogs that return scripted answers and record what they were asked. */
 class FakeFileDialogs : FileDialogs {
@@ -16,6 +17,9 @@ class FakeFileDialogs : FileDialogs {
   /** What every "save" returns. */
   var saveResult: SaveResult = SaveResult.Saved("/home/maker/Documents/saved")
 
+  /** When set, the next "open" throws it, as reading an unreadable file would. */
+  var openFailure: Exception? = null
+
   var openCount = 0
     private set
 
@@ -23,6 +27,7 @@ class FakeFileDialogs : FileDialogs {
 
   override suspend fun openDesignFile(): String? {
     openCount++
+    openFailure?.let { throw it }
     return openResult
   }
 
@@ -68,5 +73,6 @@ class FakePlatform(
       clock = { nowMillis },
       newId = { "id-${++nextId}" },
       images = SkiaArgbImageFactory,
+      compute = Dispatchers.Unconfined,
     )
 }

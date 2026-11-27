@@ -3,7 +3,6 @@ package com.jaygindin.graincraft.app.data
 import com.jaygindin.graincraft.core.design.BoardDesign
 import com.jaygindin.graincraft.core.design.DesignDecode
 import com.jaygindin.graincraft.core.design.DesignJson
-import com.jaygindin.graincraft.core.design.WorkspaceJson
 import com.jaygindin.graincraft.core.shop.ShopProfile
 import com.jaygindin.graincraft.core.wood.WoodSpecies
 import java.io.IOException
@@ -16,12 +15,24 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
 
 private const val DESIGN_SUFFIX = ".graincraft.json"
 private const val TRASH_MILLIS = 30L * 24 * 60 * 60 * 1000
-private val SAFE_ID = Regex("[A-Za-z0-9][A-Za-z0-9._-]*")
+
+private val SHOP_PROFILE =
+  SettingsFile("shop-profile", "shop profile", ShopProfile.serializer()) { ShopProfile() }
+private val CUSTOM_WOODS =
+  SettingsFile(
+    "custom-woods",
+    "custom woods",
+    ListSerializer(WoodSpecies.serializer()),
+    listKey = "woods",
+  ) {
+    emptyList()
+  }
+private val SETTINGS =
+  SettingsFile("settings", "settings", AppSettings.serializer()) { AppSettings() }
 
 /**
  * Stores everything as files under [root]. Writes go to a temp file in the same folder and are
@@ -35,7 +46,12 @@ class FileWorkspaceStore(root: Path, private val clock: () -> Long) : WorkspaceS
   // Serialises every write so two saves never share one temp file.
   private val lock = Mutex()
 
+  // Settings files that could neither be read nor moved aside, and so are never written.
+  private val blocked = mutableSetOf<String>()
+
   override val rootDescription: String = this.root.toString()
+
+  override val notices = StoreNotices()
 
   override suspend fun listDesigns(): List<StoredDesign> =
     withContext(Dispatchers.IO) {
@@ -60,6 +76,9 @@ class FileWorkspaceStore(root: Path, private val clock: () -> Long) : WorkspaceS
           val existing = decodeOrNull(target)
           check(existing !is DesignDecode.NewerSchema) {
             "${target.fileName} was made by a newer GrainCraft Studio and is not overwritten"
+          }
+          check(existing !is DesignDecode.Ok || existing.design.id == design.id) {
+            "${target.fileName} holds another design and is not overwritten"
           }
         }
         writeAtomically(target, DesignJson.encode(design))
@@ -93,23 +112,17 @@ class FileWorkspaceStore(root: Path, private val clock: () -> Long) : WorkspaceS
     }
   }
 
-  override suspend fun loadShopProfile(): ShopProfile =
-    load("shop-profile.json", ShopProfile.serializer()) { ShopProfile() }
+  override suspend fun loadShopProfile(): ShopProfile = load(SHOP_PROFILE)
 
-  override suspend fun saveShopProfile(p: ShopProfile) =
-    save("shop-profile.json", ShopProfile.serializer(), p)
+  override suspend fun saveShopProfile(p: ShopProfile) = save(SHOP_PROFILE, p)
 
-  override suspend fun loadCustomWoods(): List<WoodSpecies> =
-    load("custom-woods.json", ListSerializer(WoodSpecies.serializer())) { emptyList() }
+  override suspend fun loadCustomWoods(): List<WoodSpecies> = load(CUSTOM_WOODS)
 
-  override suspend fun saveCustomWoods(w: List<WoodSpecies>) =
-    save("custom-woods.json", ListSerializer(WoodSpecies.serializer()), w)
+  override suspend fun saveCustomWoods(w: List<WoodSpecies>) = save(CUSTOM_WOODS, w)
 
-  override suspend fun loadSettings(): AppSettings =
-    load("settings.json", AppSettings.serializer()) { AppSettings() }
+  override suspend fun loadSettings(): AppSettings = load(SETTINGS)
 
-  override suspend fun saveSettings(s: AppSettings) =
-    save("settings.json", AppSettings.serializer(), s)
+  override suspend fun saveSettings(s: AppSettings) = save(SETTINGS, s)
 
   /** Moves [from] to [to] unless [to] exists, then runs [after] on the moved file. */
   private suspend fun move(from: Path, to: Path, clash: String, after: (Path) -> Unit) {
@@ -125,27 +138,45 @@ class FileWorkspaceStore(root: Path, private val clock: () -> Long) : WorkspaceS
     }
   }
 
-  private suspend fun <T> load(name: String, serializer: KSerializer<T>, default: () -> T): T =
+  /**
+   * The file's value, or [SettingsFile.default] when it is missing. A file that cannot be read, or
+   * that a newer version wrote, is renamed aside first, so the next save cannot overwrite it, and
+   * the user is told where it went.
+   */
+  private suspend fun <T> load(kind: SettingsFile<T>): T =
     withContext(Dispatchers.IO) {
-      val file = root.resolve(name)
-      try {
-        if (Files.exists(file)) {
-          WorkspaceJson.json.decodeFromString(serializer, Files.readString(file))
-        } else {
-          default()
-        }
-      } catch (_: IllegalArgumentException) {
-        // Unparseable: fall back to defaults and leave the file for the next explicit save.
-        default()
-      } catch (_: IOException) {
-        default()
+      lock.withLock {
+        val file = root.resolve(kind.fileName)
+        if (!Files.exists(file)) return@withLock kind.default()
+        val text =
+          try {
+            Files.readString(file)
+          } catch (_: IOException) {
+            null
+          }
+        text?.let { kind.decode(it) } ?: kind.default().also { keepAside(file, kind) }
       }
     }
 
-  private suspend fun <T> save(name: String, serializer: KSerializer<T>, value: T) {
+  private fun keepAside(file: Path, kind: SettingsFile<*>) {
+    val kept = file.resolveSibling("${kind.stem}.unreadable-${clock()}.json")
+    val notice =
+      try {
+        Files.move(file, kept, ATOMIC_MOVE)
+        "Couldn't read your ${kind.label}; it was kept as ${kept.fileName}"
+      } catch (_: IOException) {
+        // It cannot be moved, so it must not be written over either.
+        blocked += kind.fileName
+        "Couldn't read your ${kind.label} (${file.fileName}); changes to it won't be saved"
+      }
+    notices.add(notice)
+  }
+
+  private suspend fun <T> save(kind: SettingsFile<T>, value: T) {
     withContext(Dispatchers.IO) {
       lock.withLock {
-        writeAtomically(root.resolve(name), WorkspaceJson.json.encodeToString(serializer, value))
+        if (kind.fileName in blocked) return@withLock
+        writeAtomically(root.resolve(kind.fileName), kind.encode(value))
       }
     }
   }
@@ -153,6 +184,13 @@ class FileWorkspaceStore(root: Path, private val clock: () -> Long) : WorkspaceS
   private fun readDesign(file: Path): StoredDesign {
     val name = file.fileName.toString()
     return when (val decoded = decodeOrNull(file)) {
+      // The file name is the design's identity; a copy keeps the original's id inside it.
+      is DesignDecode.Ok if !isNamedFor(name, decoded.design.id) ->
+        StoredDesign.Unreadable(
+          name,
+          "Its id \"${decoded.design.id}\" does not match its file name, so it may be a copy " +
+            "of another design. Import it to add it as a new design.",
+        )
       is DesignDecode.Ok -> StoredDesign.Readable(name, decoded.design)
       is DesignDecode.NewerSchema ->
         StoredDesign.Unreadable(
@@ -183,9 +221,12 @@ class FileWorkspaceStore(root: Path, private val clock: () -> Long) : WorkspaceS
     }
   }
 
+  private fun isNamedFor(fileName: String, id: String): Boolean =
+    isValidDesignId(id) && fileName == "$id$DESIGN_SUFFIX"
+
   // Ids become file names, so anything that could leave the folder is refused.
   private fun designFileName(id: String): String {
-    require(SAFE_ID.matches(id)) { "Not a valid design id: $id" }
+    require(isValidDesignId(id)) { "Not a valid design id: $id" }
     return "$id$DESIGN_SUFFIX"
   }
 }

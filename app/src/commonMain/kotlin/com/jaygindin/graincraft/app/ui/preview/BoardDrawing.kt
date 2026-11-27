@@ -18,11 +18,13 @@ import androidx.compose.ui.unit.IntSize
 import com.jaygindin.graincraft.app.ui.editor.Finish
 import com.jaygindin.graincraft.core.design.EdgeTreatments
 import com.jaygindin.graincraft.core.design.JuiceGroove
+import com.jaygindin.graincraft.core.design.fitsOn
 import com.jaygindin.graincraft.core.layout.BoardLayout
 import com.jaygindin.graincraft.core.layout.Fibre
 import com.jaygindin.graincraft.core.layout.Piece
 import com.jaygindin.graincraft.core.texture.TextureSpec
 import com.jaygindin.graincraft.core.texture.textureSeed
+import com.jaygindin.graincraft.core.units.Length
 import com.jaygindin.graincraft.core.wood.Woods
 import kotlin.math.ceil
 import kotlin.math.max
@@ -163,8 +165,13 @@ private fun PreviewTransform.path(points: List<Offset>): Path =
     close()
   }
 
+private fun Float.toLength(): Length = Length.inchesApprox(toDouble())
+
+/**
+ * A corner radius larger than the rect allows, or a rect with no area, is clamped, never thrown.
+ */
 private fun roundRect(rect: Rect, radius: Float): RoundRect {
-  val r = radius.coerceIn(0f, min(rect.width, rect.height) / 2f)
+  val r = radius.coerceIn(0f, max(0f, min(rect.width, rect.height) / 2f))
   return RoundRect(rect, CornerRadius(r))
 }
 
@@ -221,7 +228,11 @@ internal fun DrawScope.drawBoard(
       drawPath(path, colors.highlight.copy(alpha = HOVER_FILL_ALPHA))
       drawPath(path, colors.highlight.copy(alpha = HOVER_STROKE_ALPHA), style = Stroke(2 * density))
     }
-    edges.juiceGroove?.let { drawGroove(it, rect, shape, scale, colors) }
+    // The live edges can be ahead of the last compiled board, so the fit is checked here too;
+    // the compiler's warning tells the user why the groove is missing.
+    edges.juiceGroove
+      ?.takeIf { it.fitsOn(board.width.toLength(), board.height.toLength()) }
+      ?.let { drawGroove(it, rect, shape, scale, colors) }
   }
   drawPath(boardPath, colors.outline, style = Stroke(outlinePx))
 }

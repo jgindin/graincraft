@@ -40,6 +40,14 @@ Packages under `com.jaygindin.graincraft`:
   `app.ui.*`: `theme`, `components`, `library`, `editor`, `preview`, `diagram`, `woods`, `shop`,
   `settings`.
 
+- **Files on disk are never lost to a bug or a newer version.** A design is identified by its file
+  name (`designs/<id>.graincraft.json`); a file whose id does not match is listed as unreadable,
+  and a save never replaces a newer-schema file or another design. The settings, shop profile and
+  custom woods files carry `schemaVersion`; one that cannot be read, or is newer, is renamed to
+  `<name>.unreadable-<millis>.json` and the user is told once. Keep these rules for any new file.
+- Compiling never runs on the main thread: the editor and the library compile on
+  `Dispatchers.Default` (`AppGraph.compute` for the library), and core validation bounds every
+  pattern element so no saved design can make a compile run away.
 - `:core` builds for Wasm so that Java-only APIs can't creep into shared code. `:app` has only a JVM
   target in phase 1, so a detekt `ForbiddenImport` rule bans `java.*` and `javax.*` in every
   `commonMain`. Platform services are interfaces in `commonMain`, implemented in `desktopMain`.
@@ -98,9 +106,11 @@ Always use the Gradle wrapper from the repository root (`./gradlew`). Versions l
   worked examples in `Examples.kt`. App tests are in `app/src/desktopTest/`, also by package:
   view model tests drive virtual time (`EditorFixtures.kt`), UI tests use `runComposeUiTest` or
   `runDesktopComposeUiTest(width, height)`, and the fakes (`FakePlatform`, `FakeWorkspaceStore`,
-  `FakeFileDialogs`, `FakeExternalBrowser`) are in `testutil/`. `EditorScreenHost.kt` has
-  `withEditor` (a live editor alone) and `openInApp` (the whole app with key presses routed to the
-  shortcuts as the window routes them). `PreviewExamples.kt` rebuilds examples A, B and C.
+  `FakeFileDialogs`, `FakeExternalBrowser`) are in `testutil/`. `FakePlatform`'s graph compiles
+  the library on `Dispatchers.Unconfined`, so it is ready when the UI is idle.
+  `EditorScreenHost.kt` has `withEditor` (a live editor alone) and `openInApp` (the whole app with
+  key presses routed to the shortcuts as the window routes them). `PreviewExamples.kt` rebuilds
+  examples A, B and C.
 - **Screenshot tests: Roborazzi** on Compose Desktop, with goldens in `app/screenshots/`, taken at
   1280 × 800 (`testutil/Screenshots.kt`, with a fixed version and a small change threshold) in light
   and dark. `verifyRoborazziDesktop` runs in CI; run `recordRoborazziDesktop` only when a visual

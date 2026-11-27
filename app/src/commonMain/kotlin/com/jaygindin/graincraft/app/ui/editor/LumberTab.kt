@@ -24,15 +24,16 @@ import com.jaygindin.graincraft.app.ui.preview.ColorSwatch
 import com.jaygindin.graincraft.app.ui.theme.Spacing
 import com.jaygindin.graincraft.core.compile.CompiledDesign
 import com.jaygindin.graincraft.core.fabrication.CutPart
+import com.jaygindin.graincraft.core.fabrication.cutListTable
 import com.jaygindin.graincraft.core.fabrication.formatBoardFeet
 import com.jaygindin.graincraft.core.wood.Woods
 
 private val SWATCH = 16.dp
 private val COUNT_COLUMN = 32.dp
-private val STOCK_COLUMN = 48.dp
+private val PANELS_COLUMN = 48.dp
 private const val WOOD_WEIGHT = 1f
-private const val SIZE_WEIGHT = 1.6f
-private const val RIP_WEIGHT = 0.8f
+private const val SIZE_WEIGHT = 1.4f
+private const val MILL_WEIGHT = 1.4f
 
 /** What to buy, per species with milling waste, and the cut list of every milled part. */
 @Composable
@@ -70,7 +71,7 @@ internal fun LumberTab(compiled: CompiledDesign, woods: Woods, modifier: Modifie
       Text(formatBoardFeet(compiled.lumber.total), style = MaterialTheme.typography.titleSmall)
     }
     Text(
-      "Board feet include milling waste. Stock is the rough thickness to buy.",
+      "Board feet include milling waste. Mill from names the rough stock to buy.",
       style = MaterialTheme.typography.bodySmall,
       color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -83,49 +84,38 @@ internal fun LumberTab(compiled: CompiledDesign, woods: Woods, modifier: Modifie
   }
 }
 
+/** The shared cut-list rows, the same ones the shop packet prints. */
 @Composable
 private fun CutListTable(parts: List<CutPart>, woods: Woods) {
-  val formatter = LocalUnitFormatter.current
-  val header = MaterialTheme.typography.labelMedium
-  val body = MaterialTheme.typography.bodySmall
+  val table = cutListTable(parts, woods, LocalUnitFormatter.current)
   Column {
-    CutRow(header, "Wood", "Qty", "W × H × L", "Stock", "Rip")
+    CutRow(MaterialTheme.typography.labelMedium, table.headers, Modifier.testTag("cut-header"))
     HorizontalDivider()
-    parts.forEachIndexed { i, part ->
-      CutRow(
-        body,
-        woods.nameOf(part.speciesId),
-        part.count.toString(),
-        "${formatter.format(part.width)} × ${formatter.format(part.height)} × " +
-          formatter.format(part.length),
-        part.stock?.label ?: "Laminate",
-        formatter.format(part.ripWidth),
-        Modifier.testTag("cut-$i"),
-      )
+    table.rows.forEachIndexed { i, row ->
+      CutRow(MaterialTheme.typography.bodySmall, row.cells, Modifier.testTag("cut-$i"))
       HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     }
+    Text(
+      table.legend,
+      style = MaterialTheme.typography.bodySmall,
+      color = MaterialTheme.colorScheme.onSurfaceVariant,
+      modifier = Modifier.padding(top = Spacing.sm),
+    )
   }
 }
 
+/** Wood, quantity, size, what to mill it from and its panels, in that order. */
 @Composable
-private fun CutRow(
-  style: TextStyle,
-  wood: String,
-  count: String,
-  size: String,
-  stock: String,
-  rip: String,
-  modifier: Modifier = Modifier,
-) {
+private fun CutRow(style: TextStyle, cells: List<String>, modifier: Modifier) {
   Row(
-    modifier.fillMaxWidth().padding(vertical = Spacing.xs),
+    modifier.fillMaxWidth().semantics(mergeDescendants = true) {}.padding(vertical = Spacing.xs),
     horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
   ) {
-    Cell(wood, style, Modifier.weight(WOOD_WEIGHT))
-    Cell(count, style, Modifier.width(COUNT_COLUMN), TextAlign.End)
-    Cell(size, style, Modifier.weight(SIZE_WEIGHT))
-    Cell(stock, style, Modifier.width(STOCK_COLUMN))
-    Cell(rip, style, Modifier.weight(RIP_WEIGHT))
+    Cell(cells[0], style, Modifier.weight(WOOD_WEIGHT))
+    Cell(cells[1], style, Modifier.width(COUNT_COLUMN), TextAlign.End)
+    Cell(cells[2], style, Modifier.weight(SIZE_WEIGHT))
+    Cell(cells[3], style, Modifier.weight(MILL_WEIGHT))
+    Cell(cells[4], style, Modifier.width(PANELS_COLUMN))
   }
 }
 

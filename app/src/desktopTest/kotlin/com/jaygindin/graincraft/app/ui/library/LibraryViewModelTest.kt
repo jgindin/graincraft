@@ -4,17 +4,23 @@ import com.jaygindin.graincraft.app.testutil.FakePlatform
 import com.jaygindin.graincraft.core.design.Dimensions
 import com.jaygindin.graincraft.core.design.GrainMode
 import com.jaygindin.graincraft.core.design.PatternSpec
+import com.jaygindin.graincraft.core.shop.ShopProfile
 import com.jaygindin.graincraft.core.units.Length
+import com.jaygindin.graincraft.core.wood.Woods
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -107,5 +113,48 @@ class LibraryViewModelTest {
     vm.endUndo(restore = true)
     assertEquals("a", vm.state.value.items.single().id)
     assertNull(vm.state.value.pendingUndo)
+  }
+
+  @Test
+  fun designsAreCompiledOnTheComputeDispatcher() = runTest {
+    val platform = FakePlatform()
+    platform.store.designs["a"] = sampleDesign("a", "Walnut board")
+    // Not run until this test advances it, so nothing compiles on the (immediate) main thread.
+    val compute = StandardTestDispatcher(testScheduler)
+    val vm =
+      LibraryViewModel(
+        platform.graph,
+        { Woods(emptyList()) },
+        { ShopProfile() },
+        compileDispatcher = compute,
+      )
+    assertFalse(vm.state.value.loaded)
+
+    advanceUntilIdle()
+
+    assertTrue(vm.state.value.loaded)
+    assertNotNull(vm.state.value.items.single().compiled)
+  }
+
+  @Test
+  fun inputChangesAreDebouncedAndSkippedWhenNothingChanged() = runTest {
+    val platform = FakePlatform()
+    var profile = ShopProfile()
+    val woods = Woods(emptyList())
+    val vm = LibraryViewModel(platform.graph, { woods }, { profile })
+    assertEquals(1, platform.store.listCount)
+
+    repeat(5) {
+      profile = profile.copy(kerf = profile.kerf + Length.inches(0, 1, 64))
+      vm.inputsChanged()
+      advanceTimeBy(100)
+    }
+    assertEquals(1, platform.store.listCount)
+    advanceTimeBy(201)
+    assertEquals(2, platform.store.listCount)
+
+    vm.inputsChanged()
+    advanceUntilIdle()
+    assertEquals(2, platform.store.listCount)
   }
 }

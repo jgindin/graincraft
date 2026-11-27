@@ -289,4 +289,111 @@ class PatternFitTest {
       fail(GrainMode.END_GRAIN, d, stripes(listOf(inch(1)), rowHeight = z)),
     )
   }
+
+  private val elementRange = inch(0, 1, 4)..inch(36)
+
+  @Test
+  fun oneMillimetreCellFailsWithoutBuildingTheBoard() {
+    val d = dims(inch(18), inch(12))
+    val pattern = PatternSpec.Checkerboard("a", "b", Length.millimetres(1.0))
+    assertEquals(
+      CompileError.OutOfRange("targetCell", elementRange.start, elementRange.endInclusive),
+      fail(GrainMode.END_GRAIN, d, pattern),
+    )
+  }
+
+  @Test
+  fun sixtyFourthInchCellFails() {
+    val pattern = PatternSpec.Checkerboard("a", "b", inch(0, 1, 64))
+    assertTrue(
+      fail(GrainMode.END_GRAIN, dims(inch(36), inch(24)), pattern) is CompileError.OutOfRange,
+    )
+  }
+
+  @Test
+  fun quarterInchCellIsAllowed() {
+    fit(
+      GrainMode.END_GRAIN,
+      dims(inch(18), inch(12)),
+      PatternSpec.Checkerboard("a", "b", inch(0, 1, 4)),
+    )
+  }
+
+  @Test
+  fun cellOverThirtySixInchesFails() {
+    val pattern = PatternSpec.Checkerboard("a", "b", inch(37))
+    assertEquals(
+      CompileError.OutOfRange("targetCell", elementRange.start, elementRange.endInclusive),
+      fail(GrainMode.END_GRAIN, dims(inch(18), inch(12)), pattern),
+    )
+  }
+
+  @Test
+  fun microscopicStripFails() {
+    val tiny = Length.inchesApprox(1e-6)
+    assertEquals(
+      CompileError.StripOutOfRange(0, inch(0, 1, 32), inch(36)),
+      fail(GrainMode.EDGE_GRAIN, dims(inch(16), inch(8)), stripes(listOf(tiny))),
+    )
+  }
+
+  @Test
+  fun threeHundredInchStripFailsInsteadOfOverflowing() {
+    assertEquals(
+      CompileError.StripOutOfRange(1, inch(0, 1, 32), inch(36)),
+      fail(GrainMode.EDGE_GRAIN, dims(inch(16), inch(24)), stripes(listOf(inch(1), inch(300)))),
+    )
+  }
+
+  @Test
+  fun thirtySecondInchStripIsAllowed() {
+    val f =
+      fit(
+        GrainMode.EDGE_GRAIN,
+        dims(inch(16), inch(8)),
+        stripes(listOf(inch(3), inch(0, 1, 32), inch(3))),
+      )
+    assertTrue(f.columns.all { it.finishedWidth >= inch(0, 1, 32) })
+  }
+
+  @Test
+  fun stripThatScalesBelowTheMinimumFails() {
+    // 1/32" next to two 36" strips, scaled down to 4" wide, would round to nothing.
+    assertEquals(
+      CompileError.StripOutOfRange(1, inch(0, 1, 32), inch(36)),
+      fail(
+        GrainMode.EDGE_GRAIN,
+        dims(inch(16), inch(4)),
+        stripes(listOf(inch(36), inch(0, 1, 32), inch(36))),
+      ),
+    )
+  }
+
+  @Test
+  fun brickAndRowSizesAreBounded() {
+    val d = dims(inch(16), inch(12))
+    val q = inch(0, 1, 8)
+    fun e(field: String) =
+      CompileError.OutOfRange(field, elementRange.start, elementRange.endInclusive)
+    assertEquals(
+      e("targetBrickWidth"),
+      fail(GrainMode.END_GRAIN, d, PatternSpec.Brick("c", "m", q, inch(1), inch(0, 1, 4))),
+    )
+    assertEquals(
+      e("targetBrickHeight"),
+      fail(GrainMode.END_GRAIN, d, PatternSpec.Brick("c", "m", inch(3), q, inch(0, 1, 4))),
+    )
+    assertEquals(
+      CompileError.OutOfRange("mortarWidth", inch(0, 1, 32), inch(36)),
+      fail(GrainMode.END_GRAIN, d, PatternSpec.Brick("c", "m", inch(3), inch(1), inch(0, 1, 64))),
+    )
+    assertEquals(
+      CompileError.OutOfRange("mortarWidth", inch(0, 1, 32), inch(36)),
+      fail(GrainMode.END_GRAIN, d, PatternSpec.Brick("c", "m", inch(3), inch(1), inch(40))),
+    )
+    assertEquals(
+      e("rowHeight"),
+      fail(GrainMode.END_GRAIN, d, stripes(listOf(inch(1)), rowHeight = q)),
+    )
+  }
 }

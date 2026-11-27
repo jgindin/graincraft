@@ -1,6 +1,8 @@
 package com.jaygindin.graincraft.app
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -65,16 +67,18 @@ internal fun AppShell(
     )
   }
   // Thumbnails are compiled from these, so they are rebuilt when any of them changes.
-  LaunchedEffect(formatter, woods, profile) { libraryViewModel.refresh() }
+  LaunchedEffect(formatter, woods, profile) { libraryViewModel.inputsChanged() }
   LaunchedEffect(Unit) { graph.store.purgeTrash(graph.clock()) }
   val nav = rememberShellNavigation(controller, onLeftEditor = libraryViewModel::refresh)
   val woodSearch = rememberWoodSearchFocus(nav)
+  val notices = rememberStoreNotices(graph)
 
   GrainCraftTheme(dark) {
     CompositionLocalProvider(*appLocals(formatter, graph)) {
       AppScaffold(
         current = nav.destination,
         onSelect = nav::select,
+        notices = notices,
       ) {
         when (nav.destination) {
           Destination.DESIGNS ->
@@ -131,6 +135,22 @@ private fun editorFactory(
   formatter: StateFlow<UnitFormatter>,
 ): (BoardDesign) -> EditorViewModel = { design ->
   EditorViewModel(design, graph.store, woods.woods, shop.profile, formatter, graph.clock)
+}
+
+/** Shows each of the store's notices once, such as a settings file it had to keep aside. */
+@Composable
+private fun rememberStoreNotices(graph: AppGraph): SnackbarHostState {
+  val host = remember { SnackbarHostState() }
+  LaunchedEffect(graph.store) {
+    // One at a time: the collector waits while a notice shows, then sees what is left.
+    graph.store.notices.pending.collect { pending ->
+      for (notice in pending) {
+        graph.store.notices.dismiss(notice)
+        host.showSnackbar(notice, withDismissAction = true, duration = SnackbarDuration.Long)
+      }
+    }
+  }
+  return host
 }
 
 @Composable
