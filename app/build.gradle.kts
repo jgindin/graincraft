@@ -3,6 +3,7 @@ import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
   alias(libs.plugins.kotlinMultiplatform)
+  alias(libs.plugins.kotlinSerialization)
   alias(libs.plugins.jetbrainsCompose)
   alias(libs.plugins.compose.compiler)
   alias(libs.plugins.roborazzi)
@@ -27,6 +28,7 @@ kotlin {
       implementation(compose.components.resources)
       implementation(libs.androidx.lifecycle.viewmodel.compose)
       implementation(libs.kotlinx.coroutines.core)
+      implementation(libs.kotlinx.serialization.json)
       implementation(libs.filekit.dialogs.compose)
     }
     named("desktopMain") {
