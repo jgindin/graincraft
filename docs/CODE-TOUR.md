@@ -206,3 +206,22 @@ In [app/.../app/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/) an
   on no screen, see `restorablePlacement`) and saves them on close.
 - Screenshot goldens live in [app/screenshots/](../app/screenshots/); `ShellScreenshotTest` renders
   `AppShell` at 1280 × 800 with a fixed version so goldens do not change with releases.
+
+## 14. Designs library
+
+In [ui/library/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/library/) and
+[ui/preview/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/preview/).
+
+- `LibraryViewModel` lists the store's designs, compiles each with `DesignCompiler` for its
+  thumbnail and summary, and offers `create`, `rename`, `duplicate`, `delete` / `undoDelete`,
+  `importFile` (a clashing id gets a new id and " (imported)") and `exportFile`. Actions run one at
+  a time and a store refusal becomes `LibraryState.message`.
+- `NewDesignDefaults.kt` has `PatternKind` and `defaultPattern(kind)`, the starting pattern of a new
+  design (the editor reuses it).
+- `LibraryScreen` is the card grid (`LazyVerticalGrid`) with the card menu, rename dialog, the empty
+  state and the Undo snackbar; `NewDesignDialog` asks for name, grain, pattern and size (edge grain
+  disables checkerboard and brick). Unreadable files show as "Can't open" cards.
+- `ui/preview/FlatBoardDrawing.kt` draws a compiled layout from above in each species' raw colour;
+  `DesignThumbnail` uses it, and the editor's preview will live beside it.
+- `App` keeps the open design's id and shows `EditorStub` until the editor lands, and purges the
+  trash once at start.

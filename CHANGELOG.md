@@ -2,6 +2,14 @@
 
 Newest first. The version matches `version.properties`.
 
+## 0.19 (not yet released)
+
+- Designs library: a grid of cards with a flat top-view thumbnail, name, size, pattern, grain and
+  last edited date. New design dialog (name, grain, pattern, size presets or custom), Import and
+  Export of `.graincraft.json` files, rename, duplicate, and delete with an Undo snackbar. Files
+  that cannot be read show as "Can't open" cards. The trash is purged once at start. Opening a
+  design shows a placeholder until the editor is built.
+
 ## 0.18 (not yet released)
 
 - App shell: a navigation rail with Designs, Woods, Shop and Settings (the first three are
