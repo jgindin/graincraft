@@ -68,6 +68,7 @@ kotlin {
         implementation(compose.desktop.uiTestJUnit4)
         implementation(compose.desktop.currentOs)
         implementation(libs.roborazzi.compose.desktop)
+        implementation(libs.kotlinx.coroutines.test)
       }
     }
   }
