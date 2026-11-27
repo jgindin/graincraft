@@ -27,6 +27,7 @@ import com.jaygindin.graincraft.core.design.GrainMode
 import com.jaygindin.graincraft.core.design.PatternSpec
 import com.jaygindin.graincraft.core.units.Length
 import com.jaygindin.graincraft.core.wood.Rating
+import com.jaygindin.graincraft.core.wood.WoodSpecies
 import com.jaygindin.graincraft.core.wood.Woods
 
 private val SWATCH_SIZE = 20.dp
@@ -173,7 +174,7 @@ internal fun SpeciesDropdown(
           .testTag(tag),
     )
     ExposedDropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-      woods.all.forEach { wood ->
+      speciesMenuOrder(woods).forEach { wood ->
         val rating =
           if (grainMode == GrainMode.END_GRAIN) wood.suitability.endGrain.rating
           else wood.suitability.edgeGrain.rating
@@ -202,3 +203,10 @@ internal fun SpeciesDropdown(
     }
   }
 }
+
+/**
+ * The species in the order the wood menus list them: alphabetical by name, ignoring case, with
+ * custom woods mixed in, so a wood is found where its name says it is.
+ */
+internal fun speciesMenuOrder(woods: Woods): List<WoodSpecies> =
+  woods.all.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name })
