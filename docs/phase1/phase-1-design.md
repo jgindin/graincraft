@@ -279,30 +279,35 @@ crosscut into slices, and the slices are turned so their end grain faces up and 
   rows only affect construction, not the look of a stripes board), the cell `s` for checkerboard,
   or the brick height `h` for brick.
 - Panel 1 strips are milled to height `H1 = r + Δp`, and panel 1 is **flattened down to `r`**.
-- For panel 1 strips, the cross-section dimension that comes from stock thickness is the smaller
-  of width and height. It only changes where the growth rings sit, since end grain faces up either
-  way. The preview places the pith to match.
+- For panel 1 strips, either cross-section dimension can come from stock thickness, since end
+  grain faces up either way (see "Cut list and lumber" for how it's chosen). It only changes where
+  the growth rings sit, and the preview places the pith to match.
 - Slice thickness: `t = T + Δf`.
 - Number of slices: `N_s` = rows (stripes: `round(L / r)` with `r` adjusted to fit; checker
   `N`; brick `N_b`).
 - Panel 1 length: `L1 = N_s·t + N_s·k + endTrim`. This deliberately counts one more kerf than
   strictly needed.
-- Panel 1 width: stripes and checkerboard `W1 = W + 2e`. Brick: `W1 = (ceil((W + 2e) / P) + 1)·P`,
-  so every offset row still covers the width after trimming.
+- Panel 1 width: stripes and checkerboard `W1 = W + 2e`. Brick: `n = ceil((W + 2e + P + m) / P)`
+  bricks and `n − 1` mortar strips, so `W1 = n·P − m`. That is at least `W + 2e + P`, so a row
+  shifted by `P/2` still covers the width after trimming.
 - Brick panel 1 alternates brick-species strips `b` wide with mortar-species strips `m` wide (the
   vertical joints), starting and ending with a brick strip. The pattern is centred across the
   width, and the excess is trimmed equally from both sides. So the mortar species is in both panel
   1 and the mortar panel, and both count towards its board feet.
 - Slices are arranged as follows:
   - Stripes: all the same way round.
-  - Checkerboard: every other slice rotated 180° about Z, which offsets the colours by one cell.
-  - Brick: every other brick row shifted by `P/2` across the width, with a mortar slice between
-    brick rows.
+  - Checkerboard: every other row rotated 180° about Z, which offsets the colours by one cell.
+  - Brick: every other brick row shifted by `P/2` across the width (rows 0, 2, 4… centred, rows
+    1, 3, 5… shifted), with a mortar slice between brick rows.
+  - A row's flip or shift always applies to the **whole row**. When panel 1 is split, a rotated row
+    takes its sub-slices in reverse order, each rotated, and a shifted row moves all its sub-slices
+    together. This keeps the wider outer strips at the outside, and lets a split fall on any strip
+    boundary.
 - Brick mortar rows come from a **mortar panel**: mortar species, width `W1`, height `m + Δp`,
   length `(N_b − 1)·(t + k) + endTrim`, crosscut to slices of thickness `t`. Mortar rows are then end
-  grain like everything else, so the whole board moves together with the seasons. If `W1` is wider
-  than the user's stock, the mortar panel is itself a glue-up of mortar-species strips of any width;
-  the build guide says so.
+  grain like everything else, so the whole board moves together with the seasons. A mortar panel
+  wider than its limit is made as `ceil(W1 / limit)` equal-width sub-panels, each a single board
+  (or a glue-up of mortar-species strips, which the build guide mentions).
 - Final glue-up size before trimming: `L × W1`. It is flattened with the profile's end-grain
   method, then its sides are trimmed to width `W`.
 - **End grain never goes through a thickness planer.** The flatten stage always says so in a
@@ -318,12 +323,8 @@ instead of splitting.
 wider than its limit is split into sub-panels at strip boundaries. The limit is the flattening
 tool's width for edge grain, and the smaller of that and `crosscutMaxWidth` for end-grain panels.
 The split uses the fewest sub-panels, and among those the boundaries that minimise the widest
-sub-panel, subject to these rules:
-
-- Checkerboard splits only where each sub-panel keeps an **even** strip count. Each sub-slice is
-  rotated in place.
-- Brick splits only on whole periods `P`. Each row's sub-slices are glued side by side first, and
-  the assembled row is shifted as a unit.
+sub-panel. Remaining ties go to the split whose narrowest sub-panel is widest, then to the one
+with the leftmost boundaries.
 
 Sub-panels are named `1A`, `1B`, ... For end grain, each row of the final glue-up uses a slice from
 every sub-panel, side by side in order. If no split satisfies the limit (for example, a single strip
@@ -333,9 +334,12 @@ or period is wider than it), that's an error shown to the user.
 
 - **Cut list:** one row per distinct milled part: species, count, and milled width × height ×
   length.
-- **Stock thickness:** each part's smaller cross-section dimension comes from stock thickness. The
-  compiler picks the thinnest nominal whose surfaced thickness is at least that dimension. If none
-  fits (over 1-3/4"), it says to laminate or buy thicker stock.
+- **Stock thickness:** for edge-grain strips the width comes from stock thickness (see above). For
+  every other part the compiler tries both cross-section dimensions as the one from stock
+  thickness, takes the thinnest nominal whose surfaced thickness is at least that dimension, and
+  keeps the orientation with fewer board feet (ties: the thinner stock). So thin strips are ripped
+  from thick stock instead of planing thick stock down. If neither dimension fits (both over
+  1-3/4"), it says to laminate or buy thicker stock.
 - **Board feet** per species: `Σ nominal thickness × (rip width + k) × length / 144 × (1 +
   millingWaste)`. Shown to 0.1 BF, plus a total.
 
@@ -639,7 +643,9 @@ offers "Open in browser", from which the user prints or saves as PDF.
   grain. Strips wider than 1-3/4" are face-glued from two pieces, which leaves a visible glue line.
 - End-grain boards are trimmed only on the sides, never on the ends.
 - With no planer or drum sander, long-grain panels are flattened with the end-grain method.
-- Splits keep checkerboard sub-panels at even strip counts and brick sub-panels on whole periods.
+- A row's flip or shift applies to the whole row, so panels can be split at any strip boundary.
+- Brick rows alternate centred and shifted by half a brick; the mortar species also forms the
+  vertical joints in panel 1.
 - Checkerboard keeps squares square and lets the length come out slightly off target; brick keeps
   length exact and trims width.
 - Thickness warnings at 1-1/4" (end grain) and 3/4" (edge grain).
