@@ -1,5 +1,6 @@
 package com.jaygindin.graincraft.app.ui.library
 
+import com.jaygindin.graincraft.app.platform.SaveResult
 import com.jaygindin.graincraft.app.testutil.FakePlatform
 import com.jaygindin.graincraft.core.design.DesignJson
 import kotlin.test.AfterTest
@@ -83,5 +84,17 @@ class LibraryImportExportTest {
     assertEquals("Walnut board.graincraft", save.suggestedName)
     assertEquals("json", save.extension)
     assertEquals(DesignJson.encode(design), save.contents)
+  }
+
+  @Test
+  fun aFailedExportSaysWhy() = runTest {
+    val platform = FakePlatform()
+    platform.store.designs["a"] = sampleDesign("a", "Walnut board")
+    platform.dialogs.saveResult = SaveResult.Failed("Permission denied")
+    val vm = libraryViewModel(platform)
+
+    vm.exportFile("a")
+
+    assertEquals("Couldn't save: Permission denied", vm.state.value.message)
   }
 }

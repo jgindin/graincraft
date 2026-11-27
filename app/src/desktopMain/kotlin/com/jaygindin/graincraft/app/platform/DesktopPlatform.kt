@@ -22,14 +22,22 @@ class DesktopFileDialogs : FileDialogs {
     suggestedName: String,
     extension: String,
     contents: String,
-  ): String? {
-    val picked = FileKit.openFileSaver(suggestedName, defaultExtension = extension) ?: return null
-    return withContext(Dispatchers.IO) {
-      picked.file.writeText(contents)
-      picked.file.absolutePath
-    }
+  ): SaveResult {
+    val picked =
+      FileKit.openFileSaver(suggestedName, defaultExtension = extension)
+        ?: return SaveResult.Cancelled
+    return withContext(Dispatchers.IO) { writeFile(picked.file, contents) }
   }
 }
+
+/** Writes [contents] to [file], reporting a failure (a full disk, no permission) as a result. */
+internal fun writeFile(file: File, contents: String): SaveResult =
+  try {
+    file.writeText(contents)
+    SaveResult.Saved(file.absolutePath)
+  } catch (e: IOException) {
+    SaveResult.Failed(e.message ?: e.javaClass.simpleName)
+  }
 
 /** Opens files and folders with `xdg-open`, falling back to AWT where that is missing. */
 class DesktopExternalBrowser : ExternalBrowser {

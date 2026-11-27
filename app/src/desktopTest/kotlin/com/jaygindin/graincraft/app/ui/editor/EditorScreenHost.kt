@@ -1,17 +1,27 @@
 package com.jaygindin.graincraft.app.ui.editor
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
+import com.jaygindin.graincraft.app.App
+import com.jaygindin.graincraft.app.AppController
+import com.jaygindin.graincraft.app.onKeyEvent
 import com.jaygindin.graincraft.app.platform.SkiaArgbImageFactory
+import com.jaygindin.graincraft.app.testutil.FakePlatform
 import com.jaygindin.graincraft.app.testutil.FakeWorkspaceStore
 import com.jaygindin.graincraft.app.ui.LocalUnitFormatter
 import com.jaygindin.graincraft.app.ui.preview.LocalArgbImageFactory
+import com.jaygindin.graincraft.app.ui.preview.PreviewExamples
 import com.jaygindin.graincraft.app.ui.theme.GrainCraftTheme
 import com.jaygindin.graincraft.core.design.BoardDesign
 import com.jaygindin.graincraft.core.shop.ShopProfile
@@ -114,3 +124,24 @@ fun ComposeUiTest.allText(): String =
 private fun androidx.compose.ui.semantics.SemanticsNode.allTexts(): List<String> =
   config.getOrNull(SemanticsProperties.Text).orEmpty().map { it.text } +
     children.flatMap { it.allTexts() }
+
+/**
+ * Shows the app with example A stored as design "a", opens it from the library, and routes key
+ * presses to [controller]'s shortcuts as the window does.
+ */
+@OptIn(ExperimentalTestApi::class)
+fun ComposeUiTest.openInApp(platform: FakePlatform, controller: AppController = AppController()) {
+  platform.store.designs["a"] = PreviewExamples.a.copy(id = "a")
+  setContent { ShortcutHost(platform, controller) }
+  awaitTag("design-card-a")
+  onNodeWithTag("design-card-a").performClick()
+  awaitTag("dim-width")
+}
+
+/** The app with key presses routed to [controller]'s shortcuts, as the window routes them. */
+@Composable
+fun ShortcutHost(platform: FakePlatform, controller: AppController) {
+  Box(Modifier.fillMaxSize().onPreviewKeyEvent { controller.onKeyEvent(it) }) {
+    App(platform.graph, controller)
+  }
+}

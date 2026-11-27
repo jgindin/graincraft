@@ -14,16 +14,31 @@ step-by-step build guide based on the user's shop tools.
 - Kotlin Multiplatform + Compose Multiplatform. Package root `com.jaygindin.graincraft`.
 - The first app is a **native Linux desktop app**. Windows, Android and web come later from the same
   code; see [docs/roadmap.md](docs/roadmap.md).
-- **Current state:** the Gradle build, tooling and CI exist; `:core` holds only a smoke-test marker
-  and `:app` opens an empty "GrainCraft Studio" window. The phase 1 plan adds the domain and the
-  screens task by task; update this file as they land.
+- **Current state:** phase 1 is built: the domain in `:core` and the desktop app in `:app` (designs
+  library, editor with preview, build guide and lumber, Woods, Shop, Settings, shop packet export,
+  keyboard shortcuts and a `.deb`). See `README.md` for what it does and
+  [docs/CODE-TOUR.md](docs/CODE-TOUR.md) for where each part lives.
 
 ## Modules (phase 1)
 
 | Module | What | Targets |
 |---|---|---|
-| `:core` | The domain: lengths and units, wood catalog and ratings, designs, pattern fitting, build math, warnings, build guide, grain textures, shop packet HTML. Pure Kotlin, no platform code. | `jvm()` and `wasmJs { nodejs() }` |
-| `:app` | The Compose UI, view models and theme (`commonMain`), plus the desktop entry point, file storage and dialogs (`desktopMain`). | `jvm("desktop")` in phase 1 |
+| `:core` | The domain. Pure Kotlin, no platform code. | `jvm()` and `wasmJs { nodejs() }` |
+| `:app` | The Compose UI, view models and theme (`commonMain`), plus the desktop entry point, file storage, dialogs and shortcuts (`desktopMain`). | `jvm("desktop")` in phase 1 |
+
+Packages under `com.jaygindin.graincraft`:
+
+- `core.units` (`Length` in nanometres, parser, `UnitFormatter`, board feet), `core.wood`
+  (catalog, ratings, custom woods), `core.design` (`BoardDesign`, `PatternSpec`, JSON),
+  `core.shop` (`ShopProfile`), `core.fabrication` (fitting, panels, splitting, cut list, lumber),
+  `core.layout` (the board's pieces), `core.audit` (warnings), `core.guide` (build stages and
+  diagrams), `core.compile` (`DesignCompiler`, the one entry point), `core.texture` (grain
+  pixels), `core.packet` (shop packet HTML).
+- `app` (shell: `App`, `AppController`, `ShellNavigation`, `AppGraph`; `Main.kt` and
+  `Shortcuts.kt` in `desktopMain`), `app.data` (`WorkspaceStore`, `AppSettings`;
+  `FileWorkspaceStore` in `desktopMain`), `app.platform` (dialogs, browser, clock), and
+  `app.ui.*`: `theme`, `components`, `library`, `editor`, `preview`, `diagram`, `woods`, `shop`,
+  `settings`.
 
 - `:core` builds for Wasm so that Java-only APIs can't creep into shared code. `:app` has only a JVM
   target in phase 1, so a detekt `ForbiddenImport` rule bans `java.*` and `javax.*` in every
@@ -36,10 +51,13 @@ Always use the Gradle wrapper from the repository root (`./gradlew`). Versions l
 
 ```bash
 ./gradlew :core:allTests           # the domain tests, on the JVM and on Wasm (Node)
+./gradlew :core:jvmTest --tests 'LayoutTest'      # one core test class, fast
 ./gradlew :app:desktopTest         # Compose Desktop UI tests
+./gradlew :app:desktopTest --tests '*EditorScreenTest'   # one app test class
 ./gradlew verifyRoborazziDesktop   # compare the screenshot tests with their goldens
+./gradlew recordRoborazziDesktop   # re-record goldens, only for an intended visual change
 ./gradlew :app:run                 # run the desktop app
-./gradlew :app:packageDeb          # build the .deb
+./gradlew :app:packageDeb          # build the .deb (app/build/compose/binaries/main/deb/)
 ./scripts/ci.sh                    # everything CI runs, in order
 ./scripts/run-desktop.sh           # same as ./gradlew :app:run
 ```
@@ -57,7 +75,11 @@ Always use the Gradle wrapper from the repository root (`./gradlew`). Versions l
 - **Static analysis: detekt** (`dev.detekt` 2.0.0-alpha series, the one that supports the Kotlin
   2.4 compiler). Config: `config/detekt/detekt.yml` (overrides only, each with a reason). **There is
   no baseline: fix findings, don't suppress them.** A narrow `@Suppress` with a reason comment is
-  acceptable only where a rule conflicts with an API shape the code doesn't control.
+  acceptable only where a rule conflicts with an API shape the code doesn't control. The overrides:
+  `MagicNumber` ignores `@Composable` functions, ranges, enum arguments, tests and the theme;
+  `TooManyFunctions` ignores overridden functions; `FunctionNaming` ignores composables. Default
+  limits still apply elsewhere, so a long composable (`LongMethod`, 60 lines) is split, for
+  example by moving its state into a holder class.
 - **UI is Material 3 Compose components throughout.** Colours, type, shapes and spacing come from
   the app theme (`GrainCraftTheme`, `Spacing`); screens never use colour literals or `fontSize =`.
   A theme test enforces this. Hand-drawn UI is only for the board preview and the build diagrams.
@@ -72,10 +94,19 @@ Always use the Gradle wrapper from the repository root (`./gradlew`). Versions l
 - Build math is the part where a mistake wastes real lumber. Every formula in the phase 1 design has
   hand-checked worked examples as tests.
 - Fixtures are synthetic. Never commit real user data or credentials.
-- **Screenshot tests: Roborazzi** on Compose Desktop, with goldens in `app/screenshots/`.
-  `verifyRoborazziDesktop` runs in CI; run `recordRoborazziDesktop` only when a visual change is
-  intended, and say so in the PR. Dependency bumps (Compose, Skiko, Roborazzi) must pass
-  `verifyRoborazziDesktop` with no golden changes.
+- **Layout:** core tests in `core/src/commonTest/` mirror the main packages, with the hand-checked
+  worked examples in `Examples.kt`. App tests are in `app/src/desktopTest/`, also by package:
+  view model tests drive virtual time (`EditorFixtures.kt`), UI tests use `runComposeUiTest` or
+  `runDesktopComposeUiTest(width, height)`, and the fakes (`FakePlatform`, `FakeWorkspaceStore`,
+  `FakeFileDialogs`, `FakeExternalBrowser`) are in `testutil/`. `EditorScreenHost.kt` has
+  `withEditor` (a live editor alone) and `openInApp` (the whole app with key presses routed to the
+  shortcuts as the window routes them). `PreviewExamples.kt` rebuilds examples A, B and C.
+- **Screenshot tests: Roborazzi** on Compose Desktop, with goldens in `app/screenshots/`, taken at
+  1280 × 800 (`testutil/Screenshots.kt`, with a fixed version and a small change threshold) in light
+  and dark. `verifyRoborazziDesktop` runs in CI; run `recordRoborazziDesktop` only when a visual
+  change is intended, look at every changed PNG before committing it, and say so in the PR.
+  Dependency bumps (Compose, Skiko, Roborazzi) must pass `verifyRoborazziDesktop` with no golden
+  changes.
 
 ## Version control and hosting
 

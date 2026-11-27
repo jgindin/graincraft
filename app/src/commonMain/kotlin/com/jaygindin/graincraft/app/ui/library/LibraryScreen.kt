@@ -67,13 +67,21 @@ private val CARD_MIN_WIDTH = 220.dp
 private val THUMBNAIL_HEIGHT = 140.dp
 private val EMPTY_ICON_SIZE = 64.dp
 
-/** The designs as a grid of cards, with New and Import in the top bar. */
+/**
+ * The designs as a grid of cards, with New and Import in the top bar.
+ *
+ * @param creating the new design dialog is showing; the app's new design shortcut opens it too.
+ */
 @Composable
-fun LibraryScreen(viewModel: LibraryViewModel, onOpen: (String) -> Unit) {
+fun LibraryScreen(
+  viewModel: LibraryViewModel,
+  onOpen: (String) -> Unit,
+  creating: Boolean,
+  onCreatingChange: (Boolean) -> Unit,
+) {
   val state by viewModel.state.collectAsState()
   val snackbars = remember { SnackbarHostState() }
   val scope = rememberCoroutineScope()
-  var creating by remember { mutableStateOf(false) }
   var renaming by remember { mutableStateOf<LibraryItem?>(null) }
 
   LaunchedEffect(state.pendingUndo) {
@@ -95,7 +103,7 @@ fun LibraryScreen(viewModel: LibraryViewModel, onOpen: (String) -> Unit) {
   LibraryContent(
     state = state,
     snackbars = snackbars,
-    onNew = { creating = true },
+    onNew = { onCreatingChange(true) },
     onImport = { scope.launch { viewModel.importFile() } },
     onOpen = onOpen,
     onRename = { renaming = it },
@@ -107,10 +115,10 @@ fun LibraryScreen(viewModel: LibraryViewModel, onOpen: (String) -> Unit) {
   if (creating) {
     NewDesignDialog(
       onCreate = { name, mode, kind, size ->
-        creating = false
+        onCreatingChange(false)
         onOpen(viewModel.create(name, mode, kind, size))
       },
-      onDismiss = { creating = false },
+      onDismiss = { onCreatingChange(false) },
     )
   }
   renaming?.let { item ->

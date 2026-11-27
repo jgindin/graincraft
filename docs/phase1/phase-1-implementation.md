@@ -133,6 +133,8 @@ mortar 1/4.
 
 ### Task 1: Gradle build, tooling and an empty window
 
+**Status:** Done (0.3). Build, ktfmt, detekt (no baseline, `ForbiddenImport` on every `commonMain`), Kover 85% on `:core`, Roborazzi and the `.deb` work; the app opens an empty window. As planned. CI on a headless runner needed no xvfb locally; confirm when the stack is pushed.
+
 **Files:**
 - Create: `settings.gradle.kts`, `build.gradle.kts`, `gradle.properties`,
   `gradle/libs.versions.toml`, `gradle/wrapper/*`, `gradlew`, `gradlew.bat` (copy the wrapper from
@@ -198,6 +200,8 @@ mortar 1/4.
   command in `xvfb-run -a` in `ci.yml` and say so in `AGENTS.md`.
 
 ### Task 2: Lengths, parsing, formatting and board feet
+
+**Status:** Done (0.4). As planned, except the lumber file is `Nominal.kt` (detekt's `MatchingDeclarationName`) and detekt's `MagicNumber` ignores enum arguments. The parser does not accept `.5` or `1.` (left for the final review).
 
 **Files:**
 - Create: `core/src/commonMain/kotlin/com/jaygindin/graincraft/core/units/Length.kt`,
@@ -265,6 +269,8 @@ mortar 1/4.
 
 ### Task 3: Wood catalog and cutting-board ratings
 
+**Status:** Done (0.5). The 26 species and their ratings as in the design table. The tests were written alongside the code rather than strictly first.
+
 **Files:**
 - Create: `core/.../core/wood/WoodSpecies.kt`, `WoodCatalog.kt` (the 26 built-ins),
   `CustomWoodRating.kt`
@@ -313,6 +319,8 @@ mortar 1/4.
 - [ ] **Step 6: Commit** on bookmark `wood-catalog`.
 
 ### Task 4: Designs, shop profile and their JSON files
+
+**Status:** Done (0.6). As planned; `WorkspaceJson` (the shared JSON settings) lives in `core.design` beside `DesignJson`.
 
 **Files:**
 - Create: `core/.../core/design/BoardDesign.kt` (`BoardDesign`, `GrainMode`, `Dimensions`),
@@ -371,6 +379,8 @@ mortar 1/4.
 
 ### Task 5: Fitting patterns to the target size
 
+**Status:** Done (0.7). `CompileError` is in its own file, and gained `NonPositiveDimension` for a zero or negative cell, brick, mortar or row height. Sums of fitted widths are exact to the nanometre.
+
 **Files:**
 - Create: `core/.../core/fabrication/PatternFit.kt`
 - Test: `core/.../core/fabrication/PatternFitTest.kt`
@@ -428,6 +438,8 @@ mortar 1/4.
 
 ### Task 6: Flattening tool choice and panel splitting
 
+**Status:** Done (0.8). As planned.
+
 **Files:**
 - Create: `core/.../core/fabrication/Flattening.kt`, `PanelSplitter.kt`
 - Test: `core/.../core/fabrication/FlatteningTest.kt`, `PanelSplitterTest.kt`
@@ -465,6 +477,8 @@ mortar 1/4.
 - [ ] **Step 4: Commit** on bookmark `panel-splitting`.
 
 ### Task 7: Fabrication: panels, slices and rows
+
+**Status:** Done (0.9). Follows the design's text: `Δp` is the chosen long-grain flattening allowance, a rotated row lists its sub-panels in reverse, mortar rows are never rotated or shifted, and an edge-grain glue-up is `L + endTrim × W + 2e` with no final flatten. `Fit.rotateAlternateRows` (set by the checkerboard fit) carries the rotation, since the fabrication step does not see the pattern. A brick board with one brick per row makes no empty mortar panels.
 
 **Files:**
 - Create: `core/.../core/fabrication/Fabrication.kt` (types), `FabricationCompiler.kt`
@@ -517,6 +531,8 @@ mortar 1/4.
 
 ### Task 8: Layout of the finished board
 
+**Status:** Done (0.10). `buildLayout` takes the `ShopProfile` (the lamination threshold is its thickest stock) and the fitted size. Rows are laid from the glue-up's centre and clipped. A mortar row has one piece per mortar sub-panel rather than one maple piece, because those are separate boards.
+
 **Files:**
 - Create: `core/.../core/layout/Layout.kt`, `LayoutBuilder.kt`
 - Test: `core/.../core/layout/LayoutBuilderTest.kt`
@@ -557,6 +573,8 @@ mortar 1/4.
 
 ### Task 9: Cut list and lumber
 
+**Status:** Done (0.11). A part too thick for any stock prices on its smaller dimension rounded up to 1/4"; identical parts merge only when their lamination matches.
+
 **Files:**
 - Create: `core/.../core/fabrication/CutList.kt`
 - Test: `core/.../core/fabrication/CutListTest.kt`
@@ -589,6 +607,8 @@ mortar 1/4.
 
 ### Task 10: Woodworking warnings
 
+**Status:** Done (0.12). One issue per species, in a stable order; unknown species are skipped. The edge-grain thinner-than-3/4" warning is left out as the plan says: the 3/4" minimum thickness makes it unreachable.
+
 **Files:**
 - Create: `core/.../core/audit/WoodAuditor.kt`
 - Test: `core/.../core/audit/WoodAuditorTest.kt`
@@ -618,6 +638,8 @@ mortar 1/4.
 - [ ] **Step 3: Commit** on bookmark `auditor`.
 
 ### Task 11: Build stages, diagrams and the design compiler
+
+**Status:** Done (0.13). Split into three files (`StagePlanner`, `BoardStages`, `StageDiagrams`) plus the compiler. The compiler adds a design's embedded custom woods, reports every unknown species at once, and lays the board out at the fitted size. The arrangement diagram is drawn from the untrimmed glue-up. A pattern element a few nanometres wide still makes the compiler allocate huge lists instead of failing (flagged for the final review).
 
 **Files:**
 - Create: `core/.../core/guide/Diagram.kt`, `StagePlanner.kt`, `StageDiagramSvgBuilder.kt`,
@@ -679,6 +701,8 @@ mortar 1/4.
 
 ### Task 12: Grain textures
 
+**Status:** Done (0.14). Textures are deterministic per platform; identical pixels on JVM and Wasm were ruled out of scope. The end-grain rings were made much stronger in the board preview task, so they read at whole-board zoom.
+
 **Files:**
 - Create: `core/.../core/texture/GrainTexture.kt`
 - Test: `core/.../core/texture/GrainTextureTest.kt`
@@ -708,6 +732,8 @@ mortar 1/4.
 
 ### Task 13: Shop packet HTML
 
+**Status:** Done (0.15). As planned.
+
 **Files:**
 - Create: `core/.../core/packet/ShopPacketExporter.kt`
 - Test: `core/.../core/packet/ShopPacketExporterTest.kt`
@@ -730,6 +756,8 @@ mortar 1/4.
 - [ ] **Step 3: Commit** on bookmark `shop-packet`.
 
 ### Task 14: Theme, icons and the theme test
+
+**Status:** Done (0.16). Font: Noto Sans copied from the system's Noto package (OFL text beside it); icons hand-drawn as Material-Symbols-style vectors, no downloads.
 
 **Files:**
 - Create: `app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/theme/GrainCraftTheme.kt`
@@ -769,6 +797,8 @@ mortar 1/4.
 - [ ] **Step 3: Commit** on bookmark `theme`.
 
 ### Task 15: Workspace storage
+
+**Status:** Done (0.17). Adds an id check, never-clobber trash and restore, and a lock around writes. detekt's `TooManyFunctions` ignores overridden functions instead of a suppression.
 
 **Files:**
 - Create: `app/src/commonMain/.../app/data/WorkspaceStore.kt` (interface and result types),
@@ -816,6 +846,8 @@ mortar 1/4.
 
 ### Task 16: App shell, navigation and Settings
 
+**Status:** Done (0.18). `FileDialogs.openDesignFile` returns the file's text and the library decodes it. Test fakes live in `desktopTest/.../testutil`. Placement on close was a separate settings write; it now goes through the Settings view model (Task 22).
+
 **Files:**
 - Create: `app/src/commonMain/.../app/AppGraph.kt`, `AppScaffold.kt` (rail and destinations),
   `app/.../app/ui/settings/SettingsScreen.kt`, `SettingsViewModel.kt`,
@@ -853,6 +885,8 @@ mortar 1/4.
 - [ ] **Step 3: Commit** (with the new goldens) on bookmark `app-shell`.
 
 ### Task 17: Designs library
+
+**Status:** Done (0.19). Adds `defaultPattern(kind)` in `NewDesignDefaults.kt` for the editor, and `FlatBoardDrawing` in `ui/preview`. The trash is purged at start. The "Edited" date is shown in UTC (left for the final review).
 
 **Files:**
 - Create: `app/.../app/ui/library/LibraryScreen.kt`, `LibraryViewModel.kt`, `NewDesignDialog.kt`,
@@ -894,6 +928,8 @@ mortar 1/4.
 
 ### Task 18: Woods and Shop screens
 
+**Status:** Done (0.20). The shell also owns the shared woods and shop profile flows that the library and editor follow. Saving a custom wood before the first load finishes can overwrite the stored list, and editing one drops its notes (both flagged for the final review).
+
 **Files:**
 - Create: `app/.../app/ui/woods/WoodsScreen.kt`, `WoodsViewModel.kt`, `CustomWoodDialog.kt`,
   `app/.../app/ui/shop/ShopScreen.kt`, `ShopViewModel.kt`, `app/.../app/ui/components/LengthField.kt`
@@ -928,6 +964,8 @@ mortar 1/4.
 - [ ] **Step 3: Commit** on bookmark `woods-and-shop`.
 
 ### Task 19: Editor view model: editing, undo, compile and autosave
+
+**Status:** Done (0.21). `EditorState` also carries the woods the compiler sees. The scope and compile dispatcher can be injected for virtual-time tests. A save that is in flight never overwrites newer embedded woods.
 
 **Files:**
 - Create: `app/.../app/ui/editor/EditorViewModel.kt`, `EditorState.kt`
@@ -972,6 +1010,8 @@ mortar 1/4.
 
 ### Task 20: Board preview canvas
 
+**Status:** Done (0.22). The end-grain rings were too faint at fit zoom, so this task also strengthened them in core `GrainTexture` (a core test pins the contrast). The zoom pill sits in a band below the board.
+
 **Files:**
 - Create: `app/.../app/ui/preview/BoardPreview.kt`, `TextureCache.kt`, `PreviewTransform.kt`
 - Test: `app/src/desktopTest/.../ui/preview/PreviewTransformTest.kt`, `TextureCacheTest.kt`,
@@ -1006,6 +1046,8 @@ mortar 1/4.
 - [ ] **Step 3: Commit** on bookmark `preview`.
 
 ### Task 21: Editor screen
+
+**Status:** Done (0.23). The 1200 dp threshold measures the window, not the editor. Back and the rail await `flush()`. Typing into a field is one undo step. The name is saved as it is typed. Export packet was left as a placeholder for Task 22.
 
 **Files:**
 - Create: `app/.../app/ui/editor/EditorScreen.kt`, `DesignPane.kt` (left), `StripListEditor.kt`,
@@ -1045,6 +1087,8 @@ mortar 1/4.
 - [ ] **Step 3: Commit** on bookmark `editor-screen`.
 
 ### Task 22: Packet export, shortcuts, packaging and docs
+
+**Status:** Done (0.24). As planned. Export saves through the dialog with the name `<name> - shop packet` and extension `html`, then shows a "Packet saved" snackbar with "Open in browser". `FileDialogs.saveFile` returns a `SaveResult` (`Saved`, `Cancelled`, `Failed`) instead of a path, so a failed write shows "Couldn't save: <reason>" in both the packet and the library export rather than crashing; `exportPacket` returns it too. The keys map to actions in a pure `shortcutAction`; screens register what each action does with `AppController`, and the window routes keys through `onPreviewKeyEvent`. Closing the window waits for the open design's write and the window placement (written through the Settings view model, so it cannot race a settings change), giving each up to 5 s. The `.deb` has the maintainer, the Graphics menu group, a new 256 px checker-block icon, and the launcher "GrainCraft Studio". **Not checked on a desktop:** the `.deb` was built and its contents listed (launcher, icon, menu entry, version 0.24.0), but not installed. The owner should install it, start it from the app menu, build example A, export the packet and print preview it.
 
 **Files:**
 - Create: `app/.../app/ui/editor/ExportPacket.kt`, `app/src/desktopMain/.../app/Shortcuts.kt`

@@ -1,6 +1,11 @@
 package com.jaygindin.graincraft.app
 
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
@@ -10,7 +15,6 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.jaygindin.graincraft.app.data.FileWorkspaceStore
 import com.jaygindin.graincraft.app.data.WindowPlacement
-import com.jaygindin.graincraft.app.data.WorkspaceStore
 import com.jaygindin.graincraft.app.data.xdgDataRoot
 import com.jaygindin.graincraft.app.platform.DesktopExternalBrowser
 import com.jaygindin.graincraft.app.platform.DesktopFileDialogs
@@ -21,6 +25,7 @@ import java.awt.Rectangle
 import java.nio.file.Path
 import java.util.UUID
 import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 private const val DEFAULT_WIDTH = 1280
@@ -53,16 +58,26 @@ fun main() {
           placement?.let { DpSize(it.width.dp, it.height.dp) }
             ?: DpSize(DEFAULT_WIDTH.dp, DEFAULT_HEIGHT.dp),
       )
+    val controller = remember { AppController() }
+    val scope = rememberCoroutineScope()
+    var closing by remember { mutableStateOf(false) }
     Window(
       onCloseRequest = {
-        savePlacement(store, state)
-        exitApplication()
+        // A second click on the close button while the first is still writing changes nothing.
+        if (!closing) {
+          closing = true
+          scope.launch {
+            controller.prepareToClose(placementOf(state))
+            exitApplication()
+          }
+        }
       },
       state = state,
       title = "GrainCraft Studio",
+      onPreviewKeyEvent = { controller.onKeyEvent(it) },
     ) {
       LaunchedEffect(Unit) { window.minimumSize = Dimension(MIN_WIDTH, MIN_HEIGHT) }
-      App(graph)
+      App(graph, controller)
     }
   }
 }
@@ -85,15 +100,13 @@ private fun screenBounds(): List<Rectangle> =
     it.defaultConfiguration.bounds
   }
 
-/** Writes the window's position and size into the settings on disk, keeping everything else. */
-private fun savePlacement(store: WorkspaceStore, state: WindowState) {
-  val position = state.position as? WindowPosition.Absolute ?: return
-  val placement =
-    WindowPlacement(
-      x = position.x.value.roundToInt(),
-      y = position.y.value.roundToInt(),
-      width = state.size.width.value.roundToInt(),
-      height = state.size.height.value.roundToInt(),
-    )
-  runBlocking { store.saveSettings(store.loadSettings().copy(window = placement)) }
+/** The window's position and size, or null while the platform still places it. */
+private fun placementOf(state: WindowState): WindowPlacement? {
+  val position = state.position as? WindowPosition.Absolute ?: return null
+  return WindowPlacement(
+    x = position.x.value.roundToInt(),
+    y = position.y.value.roundToInt(),
+    width = state.size.width.value.roundToInt(),
+    height = state.size.height.value.roundToInt(),
+  )
 }

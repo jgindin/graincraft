@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.jaygindin.graincraft.app.AppGraph
 import com.jaygindin.graincraft.app.data.StoredDesign
 import com.jaygindin.graincraft.app.data.WorkspaceStore
+import com.jaygindin.graincraft.app.platform.SaveResult
 import com.jaygindin.graincraft.core.compile.CompileResult
 import com.jaygindin.graincraft.core.compile.CompiledDesign
 import com.jaygindin.graincraft.core.compile.DesignCompiler
@@ -182,8 +183,12 @@ class LibraryViewModel(
     locked {
       val design = graph.store.find(id) ?: return@locked
       val fileName = design.name.replace(Regex("""[^\p{L}\p{N} _-]"""), "_")
-      val path = graph.dialogs.saveFile("$fileName.graincraft", "json", DesignJson.encode(design))
-      if (path != null) mutable.say("Exported to $path")
+      val json = DesignJson.encode(design)
+      when (val saved = graph.dialogs.saveFile("$fileName.graincraft", "json", json)) {
+        is SaveResult.Saved -> mutable.say("Exported to ${saved.path}")
+        is SaveResult.Failed -> mutable.say("Couldn't save: ${saved.reason}")
+        SaveResult.Cancelled -> Unit
+      }
     }
   }
 

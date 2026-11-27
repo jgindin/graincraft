@@ -7,12 +7,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.focus.FocusRequester
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jaygindin.graincraft.app.ui.LocalUnitFormatter
 import com.jaygindin.graincraft.app.ui.editor.EditorViewModel
@@ -31,7 +28,6 @@ import com.jaygindin.graincraft.core.design.BoardDesign
 import com.jaygindin.graincraft.core.units.UnitFormatter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
 
 /** The whole app: theme and units from the settings, the rail, and the current screen. */
 @Composable
@@ -46,6 +42,7 @@ internal fun AppShell(
   controller: AppController = remember { AppController() },
 ) {
   val settingsViewModel = viewModel { SettingsViewModel(graph.store) }
+  RegisterSettings(controller, settingsViewModel)
   val settings by settingsViewModel.settings.collectAsState()
   val dark = settings.theme.isDark()
   val formatter =
@@ -67,63 +64,62 @@ internal fun AppShell(
       { formatterNow },
     )
   }
-  // A design opened from the library, shown instead of the rail's screen.
-  var openDesignId by rememberSaveable { mutableStateOf<String?>(null) }
   // Thumbnails are compiled from these, so they are rebuilt when any of them changes.
   LaunchedEffect(formatter, woods, profile) { libraryViewModel.refresh() }
   LaunchedEffect(Unit) { graph.store.purgeTrash(graph.clock()) }
-  var destination by rememberSaveable { mutableStateOf(Destination.DESIGNS) }
-  val scope = rememberCoroutineScope()
-  var leaving by remember { mutableStateOf(false) }
-  // Leaving the editor writes its last change first, wherever the user goes.
-  fun leaveEditor(then: () -> Unit) {
-    if (openDesignId == null) return then()
-    // A second click while the first leave is saving would otherwise save and leave twice.
-    if (leaving) return
-    leaving = true
-    scope.launch {
-      try {
-        controller.flushOpenEditor()
-      } finally {
-        // A failed flush must not block every later leave.
-        leaving = false
-      }
-      openDesignId = null
-      // The cards show the design as it now is.
-      libraryViewModel.refresh()
-      then()
-    }
-  }
+  val nav = rememberShellNavigation(controller, onLeftEditor = libraryViewModel::refresh)
+  val woodSearch = rememberWoodSearchFocus(nav)
 
   GrainCraftTheme(dark) {
     CompositionLocalProvider(*appLocals(formatter, graph)) {
       AppScaffold(
-        current = destination,
-        onSelect = { leaveEditor { destination = it } },
+        current = nav.destination,
+        onSelect = nav::select,
       ) {
-        when {
-          destination == Destination.DESIGNS && openDesignId != null ->
-            EditorRoute(
-              checkNotNull(openDesignId),
-              libraryViewModel::load,
+        when (nav.destination) {
+          Destination.DESIGNS ->
+            DesignsDestination(
+              nav,
+              libraryViewModel,
               controller,
-              onBack = { leaveEditor {} },
-              newEditor = editorFactory(graph, woodsViewModel, shopViewModel, formatterFlow),
+              graph,
+              editorFactory(graph, woodsViewModel, shopViewModel, formatterFlow),
             )
-          destination == Destination.DESIGNS ->
-            LibraryScreen(libraryViewModel, onOpen = { openDesignId = it })
           else ->
             RailScreen(
-              destination,
+              nav.destination,
               settingsViewModel,
               woodsViewModel,
               shopViewModel,
               graph,
               version,
+              woodSearch,
             )
         }
       }
     }
+  }
+}
+
+/** The open design's editor, or the library when none is open. */
+@Composable
+private fun DesignsDestination(
+  nav: ShellNavigation,
+  library: LibraryViewModel,
+  controller: AppController,
+  graph: AppGraph,
+  newEditor: (BoardDesign) -> EditorViewModel,
+) {
+  val openId = nav.openDesignId
+  if (openId != null) {
+    EditorRoute(openId, library::load, controller, graph, onBack = nav::back, newEditor)
+  } else {
+    LibraryScreen(
+      library,
+      onOpen = { nav.openDesignId = it },
+      creating = nav.creatingDesign,
+      onCreatingChange = { nav.creatingDesign = it },
+    )
   }
 }
 
@@ -165,6 +161,7 @@ private fun RailScreen(
   shopViewModel: ShopViewModel,
   graph: AppGraph,
   version: String,
+  woodSearch: FocusRequester,
 ) {
   when (destination) {
     Destination.SETTINGS ->
@@ -174,7 +171,7 @@ private fun RailScreen(
         version = version,
         onOpenFolder = { graph.browser.openFolder(graph.store.rootDescription) },
       )
-    Destination.WOODS -> WoodsScreen(woodsViewModel)
+    Destination.WOODS -> WoodsScreen(woodsViewModel, woodSearch)
     Destination.SHOP -> ShopScreen(shopViewModel)
     else -> PlaceholderScreen(destination)
   }
