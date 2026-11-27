@@ -2,6 +2,17 @@
 
 Newest first. The version matches `version.properties`.
 
+## 0.20 (not yet released)
+
+- Woods screen: a searchable list of the 26 built-in and the custom species with raw and oiled
+  swatches, Janka, pore type, Edge and End rating chips, flag icons for oily, bleeds and irritant,
+  expandable reasons and notes, and the filters Recommended only, Hide not suitable and Custom.
+- Custom woods: add, edit and delete with a computed rating (shown live), hex colours with a live
+  swatch, and an override that needs a reason. Saved in `custom-woods.json`.
+- Shop screen: every shop profile field in cards (Saws, Planer and sander, Flattening, Allowances,
+  Lumber) with help text, saved at once, and "Reset to defaults" with a confirmation.
+- Library thumbnails are rebuilt when the woods or the shop profile change.
+
 ## 0.19 (not yet released)
 
 - Designs library: a grid of cards with a flat top-view thumbnail, name, size, pattern, grain and

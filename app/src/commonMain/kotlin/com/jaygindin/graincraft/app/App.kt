@@ -17,11 +17,13 @@ import com.jaygindin.graincraft.app.ui.library.LibraryScreen
 import com.jaygindin.graincraft.app.ui.library.LibraryViewModel
 import com.jaygindin.graincraft.app.ui.settings.SettingsScreen
 import com.jaygindin.graincraft.app.ui.settings.SettingsViewModel
+import com.jaygindin.graincraft.app.ui.shop.ShopScreen
+import com.jaygindin.graincraft.app.ui.shop.ShopViewModel
 import com.jaygindin.graincraft.app.ui.theme.GrainCraftTheme
 import com.jaygindin.graincraft.app.ui.theme.ThemeChoice
-import com.jaygindin.graincraft.core.shop.ShopProfile
+import com.jaygindin.graincraft.app.ui.woods.WoodsScreen
+import com.jaygindin.graincraft.app.ui.woods.WoodsViewModel
 import com.jaygindin.graincraft.core.units.UnitFormatter
-import com.jaygindin.graincraft.core.wood.Woods
 
 /** The whole app: theme and units from the settings, the rail, and the current screen. */
 @Composable fun App(graph: AppGraph) = AppShell(graph, AppInfo.VERSION)
@@ -42,12 +44,23 @@ internal fun AppShell(graph: AppGraph, version: String) {
       UnitFormatter(settings.units, settings.precision)
     }
   val formatterNow by rememberUpdatedState(formatter)
+  // One of each for the whole app, so the library and the editor see the same woods and profile.
+  val woodsViewModel = viewModel { WoodsViewModel(graph.store) }
+  val shopViewModel = viewModel { ShopViewModel(graph.store) }
+  val woods by woodsViewModel.woods.collectAsState()
+  val profile by shopViewModel.profile.collectAsState()
   val libraryViewModel = viewModel {
-    LibraryViewModel(graph, { Woods(emptyList()) }, { ShopProfile() }, { formatterNow })
+    LibraryViewModel(
+      graph,
+      { woodsViewModel.woods.value },
+      { shopViewModel.profile.value },
+      { formatterNow },
+    )
   }
   // A design opened from the library, shown instead of the rail's screen.
   var openDesignId by rememberSaveable { mutableStateOf<String?>(null) }
-  LaunchedEffect(formatter) { libraryViewModel.refresh() }
+  // Thumbnails are compiled from these, so they are rebuilt when any of them changes.
+  LaunchedEffect(formatter, woods, profile) { libraryViewModel.refresh() }
   LaunchedEffect(Unit) { graph.store.purgeTrash(graph.clock()) }
   var destination by rememberSaveable { mutableStateOf(Destination.DESIGNS) }
 
@@ -65,7 +78,15 @@ internal fun AppShell(graph: AppGraph, version: String) {
             EditorStub(onBack = { openDesignId = null })
           destination == Destination.DESIGNS ->
             LibraryScreen(libraryViewModel, onOpen = { openDesignId = it })
-          else -> RailScreen(destination, settingsViewModel, graph, version)
+          else ->
+            RailScreen(
+              destination,
+              settingsViewModel,
+              woodsViewModel,
+              shopViewModel,
+              graph,
+              version,
+            )
         }
       }
     }
@@ -76,6 +97,8 @@ internal fun AppShell(graph: AppGraph, version: String) {
 private fun RailScreen(
   destination: Destination,
   settingsViewModel: SettingsViewModel,
+  woodsViewModel: WoodsViewModel,
+  shopViewModel: ShopViewModel,
   graph: AppGraph,
   version: String,
 ) {
@@ -87,6 +110,8 @@ private fun RailScreen(
         version = version,
         onOpenFolder = { graph.browser.openFolder(graph.store.rootDescription) },
       )
+    Destination.WOODS -> WoodsScreen(woodsViewModel)
+    Destination.SHOP -> ShopScreen(shopViewModel)
     else -> PlaceholderScreen(destination)
   }
 }

@@ -225,3 +225,24 @@ In [ui/library/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/li
   `DesignThumbnail` uses it, and the editor's preview will live beside it.
 - `App` keeps the open design's id and shows `EditorStub` until the editor lands, and purges the
   trash once at start.
+
+## 15. Woods and Shop
+
+In [ui/woods/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/woods/),
+[ui/shop/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/shop/) and
+[ui/components/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/components/).
+
+- `AppShell` owns one `WoodsViewModel` and one `ShopViewModel`; their `woods` and `profile` flows
+  feed the library (the editor will use the same flows), and the library refreshes when either
+  changes so thumbnails follow.
+- `WoodsViewModel` loads the custom woods, keeps the search text and `WoodFilter` set, exposes the
+  narrowed `visible` list, and saves on `saveCustom` / `deleteCustom`.
+- `WoodsScreen` is a `LazyColumn` of expandable rows (swatches from `ui/preview/ColorSwatch`,
+  rating chips in `LocalRatingColors`, flag icons with tooltips). `CustomWoodDialog` adds or edits a
+  custom wood: hex fields with a live swatch, the rating computed by `rateCustomWood`, and an
+  override switch that needs a reason.
+- `ShopViewModel` loads and saves the `ShopProfile` on every change; `ShopScreen` is a form of cards
+  with help text under each field and an "I have one" switch for the optional machines. "Reset to
+  defaults" asks first.
+- `LengthField` keeps what the user types while editing, shows `parseLength`'s reason as an error,
+  and commits on valid input; otherwise it shows the length with `LocalUnitFormatter`.
