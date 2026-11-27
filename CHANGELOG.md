@@ -2,6 +2,19 @@
 
 Newest first. The version matches `version.properties`.
 
+## 0.18 (not yet released)
+
+- App shell: a navigation rail with Designs, Woods, Shop and Settings (the first three are
+  placeholders for now), `AppGraph` for the platform services (`WorkspaceStore`, `FileDialogs`,
+  `ExternalBrowser`, clock, id source), and `LocalUnitFormatter` for the chosen units.
+- Settings: units (Imperial / Metric) with an example length, fraction precision (1/16" or 1/32"),
+  theme (System / Light / Dark), the data folder with "Open folder", and About with the version
+  generated from `version.properties`. Changes are saved to `settings.json` at once.
+- The window opens at 1280 × 800 (minimum 1024 × 700) and remembers its position and size; a saved
+  position that is on no current screen is ignored.
+- Shop (saw) and Woods (tree) rail icons redrawn so they read clearly at 24 dp. Screenshot goldens
+  for Settings in light and dark.
+
 ## 0.17 (not yet released)
 
 - Workspace storage: `WorkspaceStore` with a file implementation under

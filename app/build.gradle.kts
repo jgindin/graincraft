@@ -14,11 +14,36 @@ val versionName: String =
     .apply { rootProject.file("version.properties").inputStream().use { load(it) } }
     .getProperty("versionName") ?: error("versionName missing from version.properties")
 
+// AppInfo.VERSION, so the About section shows the version from version.properties.
+val generateAppInfo =
+  tasks.register("generateAppInfo") {
+    val version = versionName
+    val outDir = layout.buildDirectory.dir("generated/appInfo/kotlin")
+    inputs.property("version", version)
+    outputs.dir(outDir)
+    doLast {
+      val file = outDir.get().file("com/jaygindin/graincraft/app/AppInfo.kt").asFile
+      file.parentFile.mkdirs()
+      file.writeText(
+        """
+        |package com.jaygindin.graincraft.app
+        |
+        |/** Generated from version.properties by the build. */
+        |object AppInfo {
+        |  const val VERSION = "$version"
+        |}
+        |"""
+          .trimMargin(),
+      )
+    }
+  }
+
 kotlin {
   jvmToolchain(21)
   jvm("desktop")
 
   sourceSets {
+    commonMain { kotlin.srcDir(generateAppInfo) }
     commonMain.dependencies {
       implementation(project(":core"))
       implementation(compose.runtime)
