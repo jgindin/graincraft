@@ -55,7 +55,7 @@ Packages under `com.jaygindin.graincraft`:
 ## Build, test and run
 
 Always use the Gradle wrapper from the repository root (`./gradlew`). Versions live in
-`gradle/libs.versions.toml`; do not hardcode them in build scripts. The build uses Java 21.
+`gradle/libs.versions.toml`; do not hardcode them in build scripts. The build uses Java 25 (`java` in the version catalog; CI sets the same version).
 
 ```bash
 ./gradlew :core:allTests           # the domain tests, on the JVM and on Wasm (Node)

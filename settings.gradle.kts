@@ -14,7 +14,8 @@ pluginManagement {
   }
 }
 
-// Downloads the JDK 21 toolchain when the machine does not have one.
+// Downloads the JDK toolchain (version `java` in libs.versions.toml) when the machine does not have
+// one.
 plugins { id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0" }
 
 dependencyResolutionManagement {
