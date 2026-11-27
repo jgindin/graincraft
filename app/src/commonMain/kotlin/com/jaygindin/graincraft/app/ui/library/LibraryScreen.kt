@@ -84,7 +84,7 @@ fun LibraryScreen(viewModel: LibraryViewModel, onOpen: (String) -> Unit) {
         actionLabel = "Undo",
         duration = SnackbarDuration.Long,
       )
-    if (result == SnackbarResult.ActionPerformed) viewModel.undoDelete() else viewModel.clearUndo()
+    viewModel.endUndo(restore = result == SnackbarResult.ActionPerformed)
   }
   LaunchedEffect(state.message) {
     val text = state.message ?: return@LaunchedEffect

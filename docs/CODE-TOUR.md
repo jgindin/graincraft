@@ -223,8 +223,8 @@ In [ui/library/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/li
   state and the Undo snackbar; `NewDesignDialog` asks for name, grain, pattern and size (edge grain
   disables checkerboard and brick). Unreadable files show as "Can't open" cards.
 - `ui/preview/FlatBoardDrawing.kt` draws a compiled layout from above in each species' raw colour;
-  `DesignThumbnail` uses it, and the editor's preview will live beside it.
-- `App` keeps the open design's id and shows `EditorStub` until the editor lands, and purges the
+  `DesignThumbnail` uses it; the editor uses `BoardPreview` beside it.
+- `App` keeps the open design's id and shows the editor for it (see section 18), and purges the
   trash once at start.
 
 ## 15. Woods and Shop
@@ -256,7 +256,8 @@ In [ui/editor/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/edi
   `CompileResult`, the woods the compiler sees (the user's plus the design's embedded customs),
   `SaveStatus`, the `Finish` (raw or oiled), undo and redo availability, and whether a grain switch
   is waiting for confirmation.
-- `edit` is one undo step (history of 100); undo and redo carry the current revision forward so a
+- `edit` is one undo step (history of 100); edits in a row with the same `coalesceKey` (a text
+  field's keystrokes) share one step; undo and redo carry the current revision forward so a
   save never counts back. Compiling runs on `Dispatchers.Default` 150 ms after the last change, at
   once on open, and again when the shared `woods`, `profile` or formatter flows change.
 - Autosave writes 1 s after the last change, bumping `revision` and `updatedAtMillis` and setting
@@ -291,3 +292,45 @@ In [ui/preview/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/pr
   `AppShell` provides it as `LocalArgbImageFactory` from the `AppGraph`.
 - `BoardPreviewScreenshotTest` records examples A, B and C (rebuilt in `PreviewExamples.kt` from the
   worked examples) in both finishes, stripes with a corner radius and groove, and A with dimensions.
+
+## 18. Design editor
+
+In [ui/editor/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/editor/),
+[ui/diagram/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/diagram/) and
+[AppController.kt](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/AppController.kt).
+
+- `EditorScreen(viewModel, onBack, onExport)` is a `Scaffold` whose top bar has back, the name
+  (renamed as it is typed, so leaving never loses it), the save status, undo and redo (which clear focus first, so a
+  field being typed in shows the restored value), the Raw / Oiled segmented button and Export
+  packet. Below it the layout follows the window's width (`LocalWindowInfo`, so the rail does not count): from 1200 dp, the design pane (360 dp),
+  the preview and the results pane (380 dp); narrower, the design pane and a `PrimaryTabRow` of
+  Preview, Issues, Build and Lumber (`EditorTab`).
+- The centre shows `BoardPreview` with a Dimensions toggle and, when the design does not compile,
+  a card of `CompileError.message`s above it. The preview keeps the last board that compiled.
+- `DesignPane` has grain, size (`dim-*` length fields, with range errors as supporting text),
+  pattern chips (edge grain allows only stripes), `PatternParams` and `EdgeDetailsSection`. Every
+  control applies a transform to the design as it is when the edit lands, through a `PartUpdate`,
+  as one undo step; a text field passes its tag as a coalescing key, so typing into it is one step.
+  `PatternParams` holds `SpeciesDropdown` (every wood with its swatch, unsuitable ones marked in the
+  rating colour), checkerboard and brick fields; `StripListEditor` has the strip rows (tags count
+  from 0), "Add strip", the presets menu over `StripePresets`, and the row height for end grain.
+- `ResultsPane.kt` switches between `IssuesTab` (compile errors, then issues with severity icons in
+  rating colours, then fit notes), `BuildTab` (a card per stage with steps, callouts and
+  `DiagramCanvas`) and `LumberTab` (board feet per species, the total, and the cut list as a table
+  of rows). Build and Lumber wait for a design that compiles.
+- `DiagramCanvas` draws a core `Diagram` (inches) scaled to its width; below 20 dp an inch it
+  stays at that scale and scrolls sideways so its labels can be read. Box fills are wood colours,
+  hatched boxes get diagonal lines, and strokes use the theme's ink.
+- Opening a design: `EditorRoute` reads it through `LibraryViewModel.load` (behind the library's
+  lock, so a just-created design is found), and creates its `EditorViewModel` in a
+  `ViewModelStore` of its own, cleared when the editor goes. Back and the rail await `flush()`
+  before leaving, and a second click meanwhile is ignored. `AppController.flushOpenEditor()` lets
+  the window do the same before it closes.
+- Tests: `EditorScreenTest` drives a live editor (`EditorScreenHost.kt`): lumber following the
+  width, an unsuitable wood raising an issue, the stage list, undo, the grain-switch dialog, metric
+  display, the compile-error card and presets. `EditorNavigationTest` runs it in the app: the
+  layout at window widths beside the rail, and leaving by back or the rail with typed edits saved.
+  `DiagramCanvasTest` draws every stage
+  diagram of A, B and C. `EditorScreenshotTest` records A, B and C in both themes at 1400 × 900,
+  the collapsed layout at 1100 × 800, A's Build and Lumber tabs and an Issues tab with issues;
+  `DiagramScreenshotTest` records A's stage diagrams alone.

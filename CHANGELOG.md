@@ -2,6 +2,19 @@
 
 Newest first. The version matches `version.properties`.
 
+## 0.23 (not yet released)
+
+- Design editor: opening a design shows its parameters on the left (grain, finished size, pattern
+  with a strip list, presets and row height, checkerboard or brick woods and sizes, and edge
+  details), the board preview in the centre with a dimensions toggle and an error card when the
+  design can't be built, and Issues, Build and Lumber tabs on the right. Below 1200 dp the right
+  pane becomes tabs beside the preview. The top bar renames the design and has the save status,
+  undo and redo, Raw / Oiled and Export packet (export itself comes later).
+- Build guide diagrams are drawn in the app, scaled to fit and scrolling sideways when that would
+  make their labels too small to read.
+- Leaving the editor (back or the rail) writes the last change first. Typing into a field is one
+  undo step, however many keys were pressed.
+
 ## 0.22 (not yet released)
 
 - Board preview (no editor screen yet): the finished board drawn piece by piece with each
