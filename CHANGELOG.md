@@ -2,6 +2,18 @@
 
 Newest first. The version matches `version.properties`.
 
+## 0.22 (not yet released)
+
+- Board preview (no editor screen yet): the finished board drawn piece by piece with each
+  species' grain texture in raw or oiled tones, rounded corners, a juice groove, a soft shadow and
+  glue lines. End-grain cells cut from the same strip show the same rings, mirrored in rotated
+  rows. Zoom from 1/4 to 8 times with the scroll wheel or buttons, pan by dragging, fit to view,
+  a hover tooltip with species, strip and slice, and a dimensions label with the target in
+  brackets when it differs. Textures are cached at power-of-two densities.
+- Grain textures: end-grain rings are much stronger and wider apart, with a crisp latewood band,
+  a slightly lighter earlywood on dark woods and a pith just outside the piece, so rings read as
+  clear arcs on a whole-board view. Latewood tones are now 0.68 of the base (pores 0.52).
+
 ## 0.21 (not yet released)
 
 - Editor view model (no screen yet): edits with 100 steps of undo and redo, a compile 150 ms after

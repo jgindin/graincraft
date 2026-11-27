@@ -40,20 +40,30 @@ object GrainTexture {
     val out = IntArray(widthPx * heightPx)
     val ppi = spec.pixelsPerInch.toDouble()
     val seed = spec.seed
-    val base = spec.tones.base.argb
+    // Dark woods get a slightly lighter earlywood, so their rings still show when the latewood can
+    // only darken a little further; pale woods are left as they are.
+    val raw = spec.tones.base.argb
+    val darkness =
+      1.0 -
+        (LUMA_R * channel(raw, RED_SHIFT) +
+          LUMA_G * channel(raw, GREEN_SHIFT) +
+          LUMA_B * channel(raw, 0)) / MAX_CHANNEL
+    val base = lerp(raw, WHITE, EARLY_LIFT * darkness * darkness)
     val late = spec.tones.latewood.argb
     val pore = spec.tones.pore.argb
     val widthIn = widthPx / ppi
     val heightIn = heightPx / ppi
     val rng = Rng(mix(seed xor RING_SALT))
 
-    // Pith: 2 to 6 inches from the piece centre, in a direction at least 25 degrees off both
-    // axes so rings never run exactly along a pixel row or column.
+    // Pith: 3/4" to 2-1/2" beyond half the piece's longer side, so it sits outside the piece as
+    // in real strip stock yet close enough for the rings to curve visibly, in a direction at least
+    // 25 degrees off both axes so rings never run exactly along a pixel row or column.
     val quadrant = rng.nextInt(QUADRANTS)
     val angle =
       (quadrant * QUADRANT_DEGREES + PITH_MIN_OFF_AXIS + rng.nextDouble() * PITH_ANGLE_SPAN) * PI /
         HALF_TURN_DEGREES
-    val pithDistance = PITH_MIN_DISTANCE + rng.nextDouble() * PITH_DISTANCE_SPAN
+    val pithDistance =
+      maxOf(widthIn, heightIn) / 2 + PITH_MIN_DISTANCE + rng.nextDouble() * PITH_DISTANCE_SPAN
     val pithX = widthIn / 2 + cos(angle) * pithDistance
     val pithY = heightIn / 2 + sin(angle) * pithDistance
     val ringsPerInch = MIN_RINGS_PER_INCH + rng.nextDouble() * RINGS_PER_INCH_SPAN
@@ -96,9 +106,10 @@ object GrainTexture {
     val ring = floor(phase)
     val f = phase - ring
     val strength = MIN_RING_STRENGTH + RING_STRENGTH_SPAN * hash01(seed, ring.toInt(), RING_SALT_B)
-    // Earlywood is pale; latewood darkens through the back of the ring and stops abruptly.
-    val t = ((f - LATEWOOD_START) / (1.0 - LATEWOOD_START)).coerceIn(0.0, 1.0)
-    val lateness = t * t * strength
+    // Earlywood is pale; latewood darkens quickly across a narrow band at the back of the ring and
+    // stops abruptly at the next ring, so each ring reads as a crisp dark arc.
+    val t = ((f - LATEWOOD_START) / LATEWOOD_RAMP).coerceIn(0.0, 1.0)
+    val lateness = smooth(t) * strength
     var colour = lerp(base, late, lateness)
 
     val density = poreDensity(spec.poreType, f)
@@ -203,12 +214,13 @@ object GrainTexture {
   private const val HALF_TURN_DEGREES = 180.0
   private const val PITH_MIN_OFF_AXIS = 25.0
   private const val PITH_ANGLE_SPAN = 40.0
-  private const val PITH_MIN_DISTANCE = 2.0
-  private const val PITH_DISTANCE_SPAN = 4.0
+  private const val PITH_MIN_DISTANCE = 0.75
+  private const val PITH_DISTANCE_SPAN = 1.75
 
-  // Ring density per inch of radius.
-  private const val MIN_RINGS_PER_INCH = 8.0
-  private const val RINGS_PER_INCH_SPAN = 8.0
+  // Ring density per inch of radius: wide enough that each ring is a clear arc at a whole-board
+  // view, about 50 pixels per inch.
+  private const val MIN_RINGS_PER_INCH = 2.5
+  private const val RINGS_PER_INCH_SPAN = 2.5
 
   // Ring-spacing warp: a broad wobble plus a fine ripple, in inches.
   private const val WARP_FREQ = 1.3
@@ -217,10 +229,18 @@ object GrainTexture {
   private const val RIPPLE_AMOUNT = 0.03
 
   // Ring colour: per-ring strength range, and where latewood begins within a ring.
-  private const val MIN_RING_STRENGTH = 0.65
-  private const val RING_STRENGTH_SPAN = 0.35
+  private const val MIN_RING_STRENGTH = 0.8
+  private const val RING_STRENGTH_SPAN = 0.2
   private const val RING_SALT_B = 7
-  private const val LATEWOOD_START = 0.55
+  private const val LATEWOOD_START = 0.68
+  private const val LATEWOOD_RAMP = 0.14
+
+  // Earlywood lift toward white for dark bases, scaled by the square of their darkness.
+  private const val EARLY_LIFT = 0.22
+  private const val LUMA_R = 0.299
+  private const val LUMA_G = 0.587
+  private const val LUMA_B = 0.114
+  private const val WHITE = 0xFFFFFF
 
   // Pores: noise scale, blend into the pore tone, and density by pore type and ring position.
   private const val PORE_FREQ = 38.0

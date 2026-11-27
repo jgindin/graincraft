@@ -14,6 +14,7 @@ import com.jaygindin.graincraft.app.data.WorkspaceStore
 import com.jaygindin.graincraft.app.data.xdgDataRoot
 import com.jaygindin.graincraft.app.platform.DesktopExternalBrowser
 import com.jaygindin.graincraft.app.platform.DesktopFileDialogs
+import com.jaygindin.graincraft.app.platform.SkiaArgbImageFactory
 import java.awt.Dimension
 import java.awt.GraphicsEnvironment
 import java.awt.Rectangle
@@ -38,6 +39,7 @@ fun main() {
       browser = DesktopExternalBrowser(),
       clock = clock,
       newId = { UUID.randomUUID().toString() },
+      images = SkiaArgbImageFactory,
     )
   val saved = runBlocking { store.loadSettings().window }
   val placement = restorablePlacement(saved, screenBounds())

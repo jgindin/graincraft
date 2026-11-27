@@ -3,6 +3,7 @@ package com.jaygindin.graincraft.app.testutil
 import com.jaygindin.graincraft.app.AppGraph
 import com.jaygindin.graincraft.app.platform.ExternalBrowser
 import com.jaygindin.graincraft.app.platform.FileDialogs
+import com.jaygindin.graincraft.app.platform.SkiaArgbImageFactory
 
 /** File dialogs that return scripted answers and record what they were asked. */
 class FakeFileDialogs : FileDialogs {
@@ -59,5 +60,12 @@ class FakePlatform(
 
   /** Ids `id-1`, `id-2`, ... in order. */
   val graph: AppGraph =
-    AppGraph(store, dialogs, browser, clock = { nowMillis }, newId = { "id-${++nextId}" })
+    AppGraph(
+      store,
+      dialogs,
+      browser,
+      clock = { nowMillis },
+      newId = { "id-${++nextId}" },
+      images = SkiaArgbImageFactory,
+    )
 }
