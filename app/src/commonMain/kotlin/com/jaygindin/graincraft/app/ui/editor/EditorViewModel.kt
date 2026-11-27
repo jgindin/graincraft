@@ -3,8 +3,11 @@ package com.jaygindin.graincraft.app.ui.editor
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jaygindin.graincraft.app.data.WorkspaceStore
+import com.jaygindin.graincraft.app.platform.FileDialogs
+import com.jaygindin.graincraft.app.platform.SaveResult
 import com.jaygindin.graincraft.app.ui.library.PatternKind
 import com.jaygindin.graincraft.app.ui.library.defaultPattern
+import com.jaygindin.graincraft.core.compile.CompileResult
 import com.jaygindin.graincraft.core.compile.DesignCompiler
 import com.jaygindin.graincraft.core.design.BoardDesign
 import com.jaygindin.graincraft.core.design.GrainMode
@@ -167,6 +170,16 @@ class EditorViewModel(
     saveDelay = null
     // The window may be closing: a cancelled caller must not leave the change with no timer.
     withContext(NonCancellable) { save() }
+  }
+
+  /**
+   * Saves the shop packet of the latest successful compile, built with the woods, profile and units
+   * the editor follows. A design that cannot be built saves nothing, as if cancelled.
+   */
+  suspend fun exportPacket(dialogs: FileDialogs): SaveResult {
+    val current = mutable.value
+    val compiled = (current.compile as? CompileResult.Ok)?.compiled ?: return SaveResult.Cancelled
+    return exportPacket(compiled, current.woods, profile.value, formatter.value, dialogs)
   }
 
   private fun changed(design: BoardDesign) {

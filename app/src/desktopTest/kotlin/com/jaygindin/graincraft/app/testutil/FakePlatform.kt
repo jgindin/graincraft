@@ -3,6 +3,7 @@ package com.jaygindin.graincraft.app.testutil
 import com.jaygindin.graincraft.app.AppGraph
 import com.jaygindin.graincraft.app.platform.ExternalBrowser
 import com.jaygindin.graincraft.app.platform.FileDialogs
+import com.jaygindin.graincraft.app.platform.SaveResult
 import com.jaygindin.graincraft.app.platform.SkiaArgbImageFactory
 
 /** File dialogs that return scripted answers and record what they were asked. */
@@ -12,8 +13,8 @@ class FakeFileDialogs : FileDialogs {
   /** What the next "open" returns: the file's text, or null for a cancelled dialog. */
   var openResult: String? = null
 
-  /** What every "save" returns: the saved path, or null for a cancelled dialog. */
-  var saveResult: String? = "/home/maker/Documents/saved"
+  /** What every "save" returns. */
+  var saveResult: SaveResult = SaveResult.Saved("/home/maker/Documents/saved")
 
   var openCount = 0
     private set
@@ -29,7 +30,7 @@ class FakeFileDialogs : FileDialogs {
     suggestedName: String,
     extension: String,
     contents: String,
-  ): String? {
+  ): SaveResult {
     saves += Save(suggestedName, extension, contents)
     return saveResult
   }

@@ -91,8 +91,20 @@ compose.desktop {
         .absolutePath
     nativeDistributions {
       targetFormats(TargetFormat.Deb)
-      packageName = "graincraft-studio"
+      // The launcher and menu entry name; the Debian package keeps a lower-case name below.
+      packageName = "GrainCraft Studio"
       packageVersion = "$versionName.0"
+      description = "Design end-grain and edge-grain cutting boards and print a shop packet."
+      vendor = "Jay R. Gindin"
+      linux {
+        packageName = "graincraft-studio"
+        debMaintainer = "Jay R. Gindin"
+        menuGroup = "Graphics"
+        appCategory = "Graphics"
+        shortcut = true
+        // An end-grain checker block, rendered once from a small Skia drawing.
+        iconFile.set(project.file("icons/graincraft-studio.png"))
+      }
     }
   }
 }

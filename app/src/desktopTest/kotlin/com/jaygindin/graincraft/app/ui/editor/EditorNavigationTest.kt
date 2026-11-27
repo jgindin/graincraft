@@ -1,15 +1,12 @@
 package com.jaygindin.graincraft.app.ui.editor
 
-import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.v2.runDesktopComposeUiTest
-import com.jaygindin.graincraft.app.App
 import com.jaygindin.graincraft.app.testutil.FakePlatform
-import com.jaygindin.graincraft.app.ui.preview.PreviewExamples
 import com.jaygindin.graincraft.app.ui.preview.PreviewExamples.inch
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -81,14 +78,4 @@ class EditorNavigationTest {
       assertEquals("Gift board", saved.name)
       assertEquals(inch(20), saved.finished.length)
     }
-}
-
-/** Shows the app with example A stored as design "a", and opens it from the library. */
-@OptIn(ExperimentalTestApi::class)
-private fun ComposeUiTest.openInApp(platform: FakePlatform) {
-  platform.store.designs["a"] = PreviewExamples.a.copy(id = "a")
-  setContent { App(platform.graph) }
-  awaitTag("design-card-a")
-  onNodeWithTag("design-card-a").performClick()
-  awaitTag("dim-width")
 }

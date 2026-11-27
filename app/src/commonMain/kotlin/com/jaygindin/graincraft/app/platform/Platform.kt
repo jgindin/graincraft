@@ -6,10 +6,21 @@ interface FileDialogs {
   suspend fun openDesignFile(): String?
 
   /**
-   * Lets the user pick where to save [contents], starting from [suggestedName] with [extension];
-   * the saved path, or null when they cancel.
+   * Lets the user pick where to save [contents], starting from [suggestedName] with [extension]
+   * (the dialog adds the extension). A write that fails is reported, never thrown, so a full disk
+   * or a read-only folder costs only this one save.
    */
-  suspend fun saveFile(suggestedName: String, extension: String, contents: String): String?
+  suspend fun saveFile(suggestedName: String, extension: String, contents: String): SaveResult
+}
+
+/** How a save through [FileDialogs.saveFile] ended. */
+sealed interface SaveResult {
+  data class Saved(val path: String) : SaveResult
+
+  data object Cancelled : SaveResult
+
+  /** The file could not be written; [reason] is one line the user can read. */
+  data class Failed(val reason: String) : SaveResult
 }
 
 /** Hands files and folders to the desktop's own apps. */

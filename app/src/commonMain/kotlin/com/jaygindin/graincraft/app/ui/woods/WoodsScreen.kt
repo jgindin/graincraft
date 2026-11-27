@@ -37,6 +37,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -61,9 +63,16 @@ private val FILTER_LABELS =
     WoodFilter.CUSTOM to "Custom",
   )
 
-/** The species list: search, filters, expandable rows, and the custom wood dialog. */
+/**
+ * The species list: search, filters, expandable rows, and the custom wood dialog.
+ *
+ * @param searchFocus focuses the search field, for the app's find shortcut.
+ */
 @Composable
-fun WoodsScreen(viewModel: WoodsViewModel) {
+fun WoodsScreen(
+  viewModel: WoodsViewModel,
+  searchFocus: FocusRequester = remember { FocusRequester() },
+) {
   val woods by viewModel.visible.collectAsState()
   val query by viewModel.query.collectAsState()
   val filters by viewModel.filters.collectAsState()
@@ -80,6 +89,7 @@ fun WoodsScreen(viewModel: WoodsViewModel) {
     onAdd = { dialog = CustomWoodDialogTarget(null) },
     onEdit = { dialog = CustomWoodDialogTarget(it) },
     onDelete = { deleting = it },
+    searchFocus = searchFocus,
   )
   dialog?.let { target ->
     CustomWoodDialog(
@@ -133,6 +143,7 @@ private fun WoodsContent(
   onAdd: () -> Unit,
   onEdit: (WoodSpecies) -> Unit,
   onDelete: (WoodSpecies) -> Unit,
+  searchFocus: FocusRequester,
 ) {
   var expanded by rememberSaveable { mutableStateOf(emptySet<String>()) }
   Scaffold(
@@ -159,7 +170,7 @@ private fun WoodsContent(
       verticalArrangement = Arrangement.spacedBy(Spacing.md),
       modifier = Modifier.padding(padding).padding(horizontal = Spacing.xl),
     ) {
-      SearchAndFilters(query, filters, onQuery, onFilter)
+      SearchAndFilters(query, filters, onQuery, onFilter, searchFocus)
       LazyColumn(
         verticalArrangement = Arrangement.spacedBy(Spacing.sm),
         modifier = Modifier.fillMaxSize().testTag("woods-list"),
@@ -287,6 +298,7 @@ private fun SearchAndFilters(
   filters: Set<WoodFilter>,
   onQuery: (String) -> Unit,
   onFilter: (WoodFilter, Boolean) -> Unit,
+  searchFocus: FocusRequester,
 ) {
   Row(
     horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
@@ -298,7 +310,7 @@ private fun SearchAndFilters(
       placeholder = { Text("Search woods") },
       leadingIcon = { Icon(painterResource(Res.drawable.ic_search), contentDescription = null) },
       singleLine = true,
-      modifier = Modifier.width(320.dp).testTag("woods-search"),
+      modifier = Modifier.width(320.dp).focusRequester(searchFocus).testTag("woods-search"),
     )
     WoodFilter.entries.forEach { filter ->
       FilterChip(

@@ -2,6 +2,21 @@
 
 Newest first. The version matches `version.properties`.
 
+## 0.24 (not yet released)
+
+- Export packet: saves the shop packet through a save dialog as `<design name> - shop packet.html`
+  and then offers "Open in browser", from which you print it or save it as PDF.
+- A file that cannot be written (a full disk, a read-only folder), from Export packet or the
+  library's Export file, shows "Couldn't save" with the reason instead of stopping the app.
+- Keyboard shortcuts: Ctrl+N new design (from anywhere), Ctrl+Z undo, Ctrl+Shift+Z or Ctrl+Y redo,
+  Ctrl+P export the shop packet, and Ctrl+F to search woods.
+- Closing the window writes the open design and the window's place first, giving each up to 5 s.
+  The window's place is written through the same queue as Settings changes, so neither overwrites
+  the other.
+- The `.deb` installs "GrainCraft Studio" in the Graphics menu with its own icon, a maintainer and a
+  description.
+- README, AGENTS.md and the code tour describe the finished phase 1 app.
+
 ## 0.23 (not yet released)
 
 - Design editor: opening a design shows its parameters on the left (grain, finished size, pattern

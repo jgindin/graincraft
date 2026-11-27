@@ -24,6 +24,28 @@ graincraft/
   window and [App.kt](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/App.kt) is the root
   composable (section 13).
 
+Every package, and the section that covers it:
+
+| Package (under `com.jaygindin.graincraft`) | Section |
+|---|---|
+| `core.units` | 2 |
+| `core.wood` | 3 |
+| `core.design`, `core.shop` | 4 |
+| `core.fabrication` | 5 |
+| `core.layout` | 6 |
+| `core.audit` | 7 |
+| `core.guide`, `core.compile` | 8 |
+| `core.texture` | 9 |
+| `core.packet` | 10 |
+| `app.ui.theme` | 11 |
+| `app.data` | 12 |
+| `app`, `app.platform`, `app.ui` (`LocalUnitFormatter`), `app.ui.settings` | 13, 19 |
+| `app.ui.library` | 14 |
+| `app.ui.woods`, `app.ui.shop`, `app.ui.components` | 15 |
+| `app.ui.editor` | 16, 18, 19 |
+| `app.ui.preview` | 17 |
+| `app.ui.diagram` | 18 |
+
 ## 2. Lengths and units
 
 All in [core/.../units/](../core/src/commonMain/kotlin/com/jaygindin/graincraft/core/units/).
@@ -188,7 +210,8 @@ In [app/.../app/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/) an
 [ui/settings/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/settings/).
 
 - `platform/Platform.kt` holds the platform interfaces: `FileDialogs` (open a design file's text,
-  save text to a chosen path), `ExternalBrowser` (open a file or folder with the desktop's apps)
+  save text to a chosen path, returning a `SaveResult`: `Saved(path)`, `Cancelled` or
+  `Failed(reason)`, never throwing), `ExternalBrowser` (open a file or folder with the desktop's apps)
   and `Clock`. `desktopMain/.../platform/DesktopPlatform.kt` implements them with FileKit and
   `xdg-open`.
 - `AppGraph` carries the store, dialogs, browser, clock, id source and the `ArgbImageFactory` for
@@ -197,14 +220,16 @@ In [app/.../app/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/) an
 - `App(graph)` creates the `SettingsViewModel`, picks light or dark from the theme setting,
   provides `LocalUnitFormatter` (in `ui/LocalUnitFormatter.kt`) and shows `AppScaffold`: the
   `NavigationRail` with the four `Destination`s (`Destination.kt`, with their icons and test-tag
-  names) and the current screen beside it. Each screen brings its own top bar. Designs, Woods and
-  Shop are `PlaceholderScreen`s until their screens land.
+  names) and the current screen beside it. Each screen brings its own top bar.
+  `ShellNavigation` holds the destination, the open design and the shortcut requests, and makes
+  every way out of the editor await its `flush()` first.
 - `SettingsViewModel` loads `AppSettings` once and saves every change in order. `SettingsScreen`
   shows units, precision (disabled for metric), theme, the data folder with "Open folder", and
   About. `AppInfo.VERSION` is generated from `version.properties` by the `generateAppInfo` Gradle
   task.
 - `Main.kt` restores the window's position and size from `AppSettings.window` (ignored when it is
-  on no screen, see `restorablePlacement`) and saves them on close.
+  on no screen, see `restorablePlacement`). Closing the window runs
+  `AppController.prepareToClose` (section 19) before it exits.
 - Screenshot goldens live in [app/screenshots/](../app/screenshots/); `ShellScreenshotTest` renders
   `AppShell` at 1280 × 800 with a fixed version so goldens do not change with releases.
 
@@ -234,7 +259,7 @@ In [ui/woods/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/wood
 [ui/components/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/components/).
 
 - `AppShell` owns one `WoodsViewModel` and one `ShopViewModel`; their `woods` and `profile` flows
-  feed the library (the editor will use the same flows), and the library refreshes when either
+  feed the library and the editor, and the library refreshes when either
   changes so thumbnails follow.
 - `WoodsViewModel` loads the custom woods, keeps the search text and `WoodFilter` set, exposes the
   narrowed `visible` list, and saves on `saveCustom` / `deleteCustom`.
@@ -299,7 +324,7 @@ In [ui/editor/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/edi
 [ui/diagram/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/diagram/) and
 [AppController.kt](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/AppController.kt).
 
-- `EditorScreen(viewModel, onBack, onExport)` is a `Scaffold` whose top bar has back, the name
+- `EditorScreen(viewModel, onBack, onExport, snackbars)` is a `Scaffold` whose top bar has back, the name
   (renamed as it is typed, so leaving never loses it), the save status, undo and redo (which clear focus first, so a
   field being typed in shows the restored value), the Raw / Oiled segmented button and Export
   packet. Below it the layout follows the window's width (`LocalWindowInfo`, so the rail does not count): from 1200 dp, the design pane (360 dp),
@@ -326,6 +351,7 @@ In [ui/editor/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/edi
   `ViewModelStore` of its own, cleared when the editor goes. Back and the rail await `flush()`
   before leaving, and a second click meanwhile is ignored. `AppController.flushOpenEditor()` lets
   the window do the same before it closes.
+- Export packet: see section 19.
 - Tests: `EditorScreenTest` drives a live editor (`EditorScreenHost.kt`): lumber following the
   width, an unsuitable wood raising an issue, the stage list, undo, the grain-switch dialog, metric
   display, the compile-error card and presets. `EditorNavigationTest` runs it in the app: the
@@ -334,3 +360,40 @@ In [ui/editor/](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/edi
   diagram of A, B and C. `EditorScreenshotTest` records A, B and C in both themes at 1400 × 900,
   the collapsed layout at 1100 × 800, A's Build and Lumber tabs and an Issues tab with issues;
   `DiagramScreenshotTest` records A's stage diagrams alone.
+
+## 19. Shop packet export, shortcuts and closing
+
+In [ui/editor/ExportPacket.kt](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ui/editor/ExportPacket.kt),
+[AppController.kt](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/AppController.kt),
+[ShellNavigation.kt](../app/src/commonMain/kotlin/com/jaygindin/graincraft/app/ShellNavigation.kt)
+and [desktopMain/.../Shortcuts.kt](../app/src/desktopMain/kotlin/com/jaygindin/graincraft/app/Shortcuts.kt).
+
+- `exportPacket(compiled, woods, profile, formatter, dialogs)` builds the packet with
+  `ShopPacketExporter` and saves it through `FileDialogs.saveFile` as `<name> - shop packet` with
+  extension `html` (the dialog adds the extension). `EditorViewModel.exportPacket(dialogs)` calls
+  it with the latest successful compile and the inputs the editor follows.
+  `rememberPacketExport` is the button's action: the dialog, then a "Packet saved" snackbar whose
+  "Open in browser" (`snackbar-open-packet`) hands the file to `ExternalBrowser.openFile`. A
+  write that fails (`SaveResult.Failed`, from `writeFile` in `DesktopPlatform.kt` catching the
+  `IOException`) shows "Couldn't save: <reason>" instead, here and in the library's Export file,
+  and nothing else is disturbed.
+- Shortcuts: `shortcutAction(key, ctrl, shift, alt, meta)` is the pure key → `AppAction` map
+  (Ctrl+N, Ctrl+Z, Ctrl+Shift+Z or Ctrl+Y, Ctrl+P, Ctrl+F), and `AppController.onKeyEvent` is what
+  `Window(onPreviewKeyEvent = ...)` calls, so a shortcut works wherever the focus is. Screens
+  register what each action does with `RegisterActions` while they are shown: the shell registers
+  new design and find wood (through `ShellNavigation`), `EditorRoute` registers undo, redo (both
+  clear focus first, like the buttons) and export. An action nobody registered returns false, so
+  the key goes on to the focused field.
+- Closing: `AppController.prepareToClose(placement)` awaits the open editor's `flush()` and then
+  writes the window placement through `SettingsViewModel.saveWindow`, the same queue the Settings
+  screen writes through (`RegisterSettings` hands it over). Each write gets 5 s
+  (`CLOSE_TIMEOUT_MILLIS`) and runs apart from the caller, so a stuck disk delays the exit but
+  cannot block it.
+- Packaging: `app/build.gradle.kts` names the launcher "GrainCraft Studio" and the Debian package
+  `graincraft-studio`, puts it in the Graphics menu, and uses
+  [app/icons/graincraft-studio.png](../app/icons/graincraft-studio.png), a 256 px end-grain checker
+  block.
+- Tests: `ExportPacketTest` (default name and contents, cancel, Open in browser, disabled while
+  the design fails), `ShortcutsTest` (the key map, and each shortcut pressed in the app through
+  `openInApp`'s key routing) and `AppControllerTest` (close writes the design and placement, keeps
+  other settings, and gives up on a stuck disk).

@@ -27,6 +27,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -75,9 +78,16 @@ private val NAME_FIELD_WIDTH = 320.dp
  * The design editor: the design's parameters on the left, the board in the centre, and its issues,
  * build guide and lumber on the right. Below 1200 dp of window width the right pane becomes tabs
  * beside the preview.
+ *
+ * @param snackbars where the shop packet export reports that it saved the file.
  */
 @Composable
-fun EditorScreen(viewModel: EditorViewModel, onBack: () -> Unit, onExport: () -> Unit) {
+fun EditorScreen(
+  viewModel: EditorViewModel,
+  onBack: () -> Unit,
+  onExport: () -> Unit,
+  snackbars: SnackbarHostState = remember { SnackbarHostState() },
+) {
   val state by viewModel.state.collectAsState()
   val focus = LocalFocusManager.current
   val compiled = rememberLastCompiled(state.compile)
@@ -104,6 +114,7 @@ fun EditorScreen(viewModel: EditorViewModel, onBack: () -> Unit, onExport: () ->
         canExport = state.compile is CompileResult.Ok,
       )
     },
+    snackbarHost = { PacketSnackbarHost(snackbars) },
     containerColor = MaterialTheme.colorScheme.background,
     modifier = Modifier.fillMaxSize().testTag("screen-editor"),
   ) { padding ->
@@ -137,6 +148,26 @@ fun EditorScreen(viewModel: EditorViewModel, onBack: () -> Unit, onExport: () ->
 
   if (state.pendingGrainSwitch) {
     GrainSwitchDialog(viewModel::confirmGrainSwitch, viewModel::cancelGrainSwitch)
+  }
+}
+
+@Composable
+private fun PacketSnackbarHost(state: SnackbarHostState) {
+  SnackbarHost(state) { data ->
+    Snackbar(
+      action = {
+        data.visuals.actionLabel?.let { label ->
+          TextButton(
+            onClick = { data.performAction() },
+            modifier = Modifier.testTag("snackbar-open-packet"),
+          ) {
+            Text(label)
+          }
+        }
+      },
+    ) {
+      Text(data.visuals.message)
+    }
   }
 }
 
